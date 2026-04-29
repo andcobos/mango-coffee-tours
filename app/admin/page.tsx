@@ -1,69 +1,106 @@
-export default function AdminPage() {
-  // Mock data para visualización del catálogo (Fase 2)
-  const services = [
-    { id: "dest-1", tipo: "DESTINO", nombre_es: "Tour Volcán Arenal", costo: 50, activo: true },
-    { id: "dest-2", tipo: "DESTINO", nombre_es: "Monteverde", costo: 65, activo: true },
-    { id: "tic-1", tipo: "ENTRADA", nombre_es: "Termales", costo: 35, activo: true },
-  ];
+import { prisma } from '@/lib/prisma'
+
+async function getDashboardData() {
+  const [total, aggregate, byEstado] = await Promise.all([
+    prisma.cotizaciones.count(),
+    prisma.cotizaciones.aggregate({ _sum: { gran_total: true } }),
+    prisma.cotizaciones.groupBy({ by: ['estado'], _count: { id: true } }),
+  ])
+
+  return {
+    total,
+    granTotalSum: Number(aggregate._sum.gran_total ?? 0),
+    byEstado: byEstado.map((g) => ({ estado: g.estado ?? 'SIN ESTADO', count: g._count.id })),
+  }
+}
+
+function MetricCard({
+  title,
+  value,
+  sub,
+  accent,
+}: {
+  title: string
+  value: string
+  sub?: string
+  accent?: boolean
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
+      <p className="text-sm font-medium text-zinc-500">{title}</p>
+      <p className={`text-3xl font-bold mt-2 ${accent ? 'text-[#f77f00]' : 'text-zinc-900'}`}>
+        {value}
+      </p>
+      {sub && <p className="text-xs text-zinc-400 mt-1">{sub}</p>}
+    </div>
+  )
+}
+
+export default async function AdminDashboard() {
+  const { total, granTotalSum, byEstado } = await getDashboardData()
+
+  const estadoColors: Record<string, string> = {
+    GENERADA: 'bg-blue-100 text-blue-700',
+    ENVIADA: 'bg-yellow-100 text-yellow-700',
+    ACEPTADA: 'bg-emerald-100 text-emerald-700',
+    RECHAZADA: 'bg-red-100 text-red-700',
+  }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-8 font-sans">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-[#004b23]">Dashboard Administrativo</h1>
-          <p className="text-zinc-500 mt-2">Gestión del catálogo de servicios</p>
-        </header>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-zinc-800">Catálogo de Servicios</h2>
-            <button className="bg-[#004b23] hover:bg-emerald-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              + Nuevo Servicio
-            </button>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-white border-b border-zinc-200">
-                  <th className="px-6 py-4 text-sm font-semibold text-zinc-600">Tipo</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-zinc-600">Nombre (ES)</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-zinc-600">Costo Operativo</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-zinc-600">Estado</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-zinc-600">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {services.map((service) => (
-                  <tr key={service.id} className="hover:bg-zinc-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="bg-emerald-100 text-[#004b23] text-xs font-bold px-2 py-1 rounded">
-                        {service.tipo}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-zinc-800 font-medium">{service.nombre_es}</td>
-                    <td className="px-6 py-4 text-sm text-zinc-600">${service.costo.toFixed(2)}</td>
-                    <td className="px-6 py-4">
-                      {service.activo ? (
-                        <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Activo
-                        </span>
-                      ) : (
-                        <span className="text-zinc-400 text-sm font-medium flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-zinc-300"></span> Inactivo
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <button className="text-[#f77f00] hover:underline font-medium">Editar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-zinc-900">Dashboard</h1>
+        <p className="text-zinc-500 text-sm mt-1">Métricas de conversión en tiempo real.</p>
+      </div>
+
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+        <MetricCard
+          title="Total de Cotizaciones"
+          value={total.toLocaleString('es-CR')}
+          sub="Todas las cotizaciones generadas"
+        />
+        <MetricCard
+          title="Ingresos Proyectados"
+          value={`$${granTotalSum.toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          sub="Suma de gran total (USD)"
+          accent
+        />
+        <MetricCard
+          title="Estados registrados"
+          value={byEstado.length.toString()}
+          sub="Tipos de estado únicos"
+        />
+      </div>
+
+      {/* Estado breakdown */}
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm">
+        <div className="px-6 py-4 border-b border-zinc-100">
+          <h2 className="text-base font-semibold text-zinc-800">Cotizaciones por Estado</h2>
         </div>
+        {byEstado.length === 0 ? (
+          <p className="px-6 py-8 text-sm text-zinc-400 text-center">
+            No hay cotizaciones registradas aún.
+          </p>
+        ) : (
+          <div className="divide-y divide-zinc-100">
+            {byEstado.map(({ estado, count }) => (
+              <div key={estado} className="flex items-center justify-between px-6 py-4">
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    estadoColors[estado] ?? 'bg-zinc-100 text-zinc-600'
+                  }`}
+                >
+                  {estado}
+                </span>
+                <span className="text-sm font-semibold text-zinc-700">
+                  {count} {count === 1 ? 'cotización' : 'cotizaciones'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

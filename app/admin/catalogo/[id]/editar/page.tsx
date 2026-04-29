@@ -1,0 +1,46 @@
+import { notFound } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import ServiceForm from '@/components/admin/catalogo/ServiceForm'
+import Link from 'next/link'
+
+interface Props {
+  params: Promise<{ id: string }>
+}
+
+export default async function EditarServicioPage({ params }: Props) {
+  const { id } = await params
+
+  const servicio = await prisma.catalogo_servicios.findUnique({ where: { id } })
+
+  if (!servicio) {
+    notFound()
+  }
+
+  const serviceData = {
+    id: servicio.id,
+    tipo: servicio.tipo,
+    nombre_es: servicio.nombre_es,
+    nombre_en: servicio.nombre_en,
+    costo_operativo: Number(servicio.costo_operativo),
+    rango_edad: servicio.rango_edad,
+  }
+
+  return (
+    <div className="p-8">
+      <div className="mb-8">
+        <Link
+          href="/admin/catalogo"
+          className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
+        >
+          ← Volver al Catálogo
+        </Link>
+        <h1 className="text-2xl font-bold text-zinc-900 mt-2">Editar Servicio</h1>
+        <p className="text-zinc-500 text-sm mt-1">{servicio.nombre_es}</p>
+      </div>
+
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-8">
+        <ServiceForm service={serviceData} />
+      </div>
+    </div>
+  )
+}
