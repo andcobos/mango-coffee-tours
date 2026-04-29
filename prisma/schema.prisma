@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMIN
+  VENTAS
+  CLIENTE
+}
+
+model Perfil {
+  id              String       @id @default(uuid()) @db.Uuid
+  rol             Rol          @default(CLIENTE)
+  nombre_completo String
+  cotizaciones    Cotizacion[]
+}
+
+model ConfiguracionGlobal {
+  id              Int     @id @default(1)
+  margen_ganancia Decimal @default(0.30) @db.Decimal(5, 2)
+  iva_porcentaje  Decimal @default(0.13) @db.Decimal(5, 2)
+}
+
+enum TipoServicio {
+  DESTINO
+  GUIA
+  ENTRADA
+  SEGURO
+  ALIMENTACION
+  KIT
+}
+
+model CatalogoServicio {
+  id              String              @id @default(uuid()) @db.Uuid
+  tipo            TipoServicio
+  nombre_es       String
+  nombre_en       String
+  costo_operativo Decimal             @db.Decimal(10, 2)
+  rango_edad      String?
+  activo          Boolean             @default(true)
+  detalles        CotizacionDetalle[]
+}
+
+model Cotizacion {
+  id               String              @id @default(uuid()) @db.Uuid
+  perfil_id        String              @db.Uuid
+  creado_por       Perfil              @relation(fields: [perfil_id], references: [id])
+  cliente_nombre   String
+  cliente_email    String
+  pax              Int
+  fecha_inicio     DateTime            @db.Date
+  fecha_fin        DateTime            @db.Date
+  idioma_preferido String              // ES o EN
+  estado           String              @default("BORRADOR") // BORRADOR, ENVIADA, ACEPTADA, RECHAZADA
+  fecha_creacion   DateTime            @default(now())
+  fecha_vencimiento DateTime           @db.Date
+  
+  subtotal_costo   Decimal             @db.Decimal(12, 2)
+  margen_aplicado  Decimal             @db.Decimal(5, 2)
+  subtotal_venta   Decimal             @db.Decimal(12, 2)
+  iva_total        Decimal             @db.Decimal(12, 2)
+  gran_total       Decimal             @db.Decimal(12, 2)
+  
+  detalles         CotizacionDetalle[]
+}
+
+model CotizacionDetalle {
+  id                      String           @id @default(uuid()) @db.Uuid
+  cotizacion_id           String           @db.Uuid
+  cotizacion              Cotizacion       @relation(fields: [cotizacion_id], references: [id], onDelete: Cascade)
+  servicio_id             String           @db.Uuid
+  servicio                CatalogoServicio @relation(fields: [servicio_id], references: [id])
+  nombre_snapshot_es      String
+  nombre_snapshot_en      String
+  costo_unitario_snapshot Decimal          @db.Decimal(10, 2)
+  cantidad                Int
+  subtotal_linea          Decimal          @db.Decimal(12, 2)
+}
