@@ -38,7 +38,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 placeholder="admin@mango.com"
-                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
               />
             </div>
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
               />
             </div>
 

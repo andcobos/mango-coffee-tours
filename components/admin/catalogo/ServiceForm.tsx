@@ -44,7 +44,7 @@ export default function ServiceForm({ service }: Props) {
           name="tipo"
           defaultValue={service?.tipo ?? ''}
           required
-          className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all bg-white"
+          className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all bg-white text-black"
         >
           <option value="" disabled>Selecciona un tipo...</option>
           {TIPOS.map((t) => (
@@ -64,7 +64,7 @@ export default function ServiceForm({ service }: Props) {
             defaultValue={service?.nombre_es ?? ''}
             required
             placeholder="Ej. Tour Volcán Arenal"
-            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all"
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -76,7 +76,7 @@ export default function ServiceForm({ service }: Props) {
             defaultValue={service?.nombre_en ?? ''}
             required
             placeholder="Eg. Arenal Volcano Tour"
-            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all"
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function ServiceForm({ service }: Props) {
               defaultValue={service?.costo_operativo ?? ''}
               required
               placeholder="0.00"
-              className="w-full pl-7 pr-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all"
+              className="w-full pl-7 pr-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
             />
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function ServiceForm({ service }: Props) {
             name="rango_edad"
             defaultValue={service?.rango_edad ?? ''}
             placeholder="Ej. 0-65, 65+"
-            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all"
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
           />
         </div>
       </div>

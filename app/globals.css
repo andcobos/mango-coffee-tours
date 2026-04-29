@@ -29,4 +29,5 @@ input,
 select,
 textarea {
   color: #111827;
+  color-scheme: light;
 }

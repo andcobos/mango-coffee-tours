@@ -136,7 +136,7 @@ export default function QuoteForm() {
               </label>
               <input
                 {...register("clientName")}
-                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
                 placeholder="Ej. Jane Doe"
               />
               {errors.clientName && (
@@ -151,7 +151,7 @@ export default function QuoteForm() {
               </label>
               <input
                 {...register("clientEmail")}
-                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
                 placeholder="ejemplo@correo.com"
               />
               {errors.clientEmail && (
@@ -171,7 +171,7 @@ export default function QuoteForm() {
               <input
                 type="number"
                 {...register("pax")}
-                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black"
               />
               {errors.pax && (
                 <p className="text-red-500 text-xs mt-1">
@@ -186,7 +186,7 @@ export default function QuoteForm() {
               <input
                 type="date"
                 {...register("startDate")}
-                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black"
               />
               {errors.startDate && (
                 <p className="text-red-500 text-xs mt-1">
@@ -201,7 +201,7 @@ export default function QuoteForm() {
               <input
                 type="date"
                 {...register("endDate")}
-                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black"
               />
               {errors.endDate && (
                 <p className="text-red-500 text-xs mt-1">
