@@ -507,6 +507,12 @@ model catalogo_servicios {
   rango_edad           String?                @db.VarChar(50)
   activo               Boolean?               @default(true)
   creado_en            DateTime?              @default(now()) @db.Timestamptz(6)
+  empresa              String?
+  tipo_vehiculo        String?
+  capacidad_pasajeros  Int?
+  costo_extra_nombre   String?
+  costo_extra_valor    Decimal?               @db.Decimal(10, 2)
+  descripcion          String?
   cotizaciones_detalle cotizaciones_detalle[]
 
   @@schema("public")

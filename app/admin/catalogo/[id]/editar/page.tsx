@@ -22,7 +22,13 @@ export default async function EditarServicioPage({ params }: Props) {
     nombre_es: servicio.nombre_es,
     nombre_en: servicio.nombre_en,
     costo_operativo: Number(servicio.costo_operativo),
-    rango_edad: servicio.rango_edad,
+    rango_edad: servicio.rango_edad ?? null,
+    empresa: servicio.empresa ?? null,
+    tipo_vehiculo: servicio.tipo_vehiculo ?? null,
+    capacidad_pasajeros: servicio.capacidad_pasajeros ?? null,
+    costo_extra_nombre: servicio.costo_extra_nombre ?? null,
+    costo_extra_valor: servicio.costo_extra_valor != null ? Number(servicio.costo_extra_valor) : null,
+    descripcion: servicio.descripcion ?? null,
   }
 
   return (

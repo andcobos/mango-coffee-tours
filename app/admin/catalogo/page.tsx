@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { toggleActivoServicio } from '@/app/actions/catalogo'
+import EliminarServicioBtn from '@/components/admin/catalogo/EliminarServicioBtn'
 
 async function getServicios() {
   return prisma.catalogo_servicios.findMany({
@@ -94,6 +95,7 @@ export default async function CatalogoPage() {
                             {s.activo ? 'Desactivar' : 'Activar'}
                           </button>
                         </form>
+                        <EliminarServicioBtn id={s.id} nombre={s.nombre_es} />
                       </div>
                     </td>
                   </tr>
