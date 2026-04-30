@@ -16,10 +16,10 @@
 
 ## Archivos clave del proyecto
 ```
-middleware.ts                          — protección de rutas /admin/*
-lib/auth.ts                           — utilidades de sesión (cookies)
+middleware.ts                          — protección de rutas /admin/* (Supabase SSR + whitelist)
+lib/supabase/server.ts                — createSupabaseServerClient() para Server Components
 lib/prisma.ts                         — cliente Prisma con pool pg
-app/actions/auth.ts                   — login / logout server actions
+app/actions/auth.ts                   — logout server action (Supabase signOut)
 app/actions/catalogo.ts               — CRUD server actions del catálogo
 components/admin/Sidebar.tsx          — sidebar client component
 components/admin/catalogo/ServiceForm.tsx — formulario create/edit (client)
@@ -42,10 +42,13 @@ prisma.config.ts                      — usa defineConfig + dotenv.config()
 - `cotizaciones_detalle`: id, cotizacion_id, servicio_id, costo_unitario_snapshot, cantidad, ...
 - `configuracion_global`: margen_ganancia (0.30), iva_porcentaje (0.13)
 
-## Autenticación temporal
-- Credenciales hardcodeadas en `lib/auth.ts`: admin@mango.com / mango2026
-- Cookie: `admin_session = "authenticated"` (httpOnly, sameSite: lax)
-- Diseñado para reemplazar fácilmente por NextAuth/Supabase Auth
+## Autenticación
+- Supabase Auth (`@supabase/ssr`) con `signInWithPassword`
+- Whitelist: variable de entorno `ADMIN_EMAILS` (CSV) en `.env.local`
+- `lib/supabase/server.ts` → `createSupabaseServerClient()` para Server Components
+- `middleware.ts` usa `createServerClient` + `getUser()` + validación whitelist
+- `app/admin/layout.tsx` oculta Sidebar si no hay sesión Supabase activa
+- `lib/auth.ts` ELIMINADO — credenciales hardcodeadas removidas del repositorio
 
 ## Colores corporativos
 - Verde oscuro: `#004b23`

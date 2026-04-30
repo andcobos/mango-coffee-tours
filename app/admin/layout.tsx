@@ -1,11 +1,11 @@
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/admin/Sidebar'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
-  const isAuthenticated = cookieStore.get('admin_session')?.value === 'authenticated'
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <>{children}</>
   }
 
