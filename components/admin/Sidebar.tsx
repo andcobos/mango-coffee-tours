@@ -9,6 +9,7 @@ const navLinks = [
   { href: '/admin/catalogo', label: 'Catálogo de Servicios', icon: '☰' },
   { href: '/admin/cotizar', label: 'Generar Cotización', icon: '✎' },
   { href: '/admin/cotizaciones', label: 'Cotizaciones', icon: '📋' },
+  { href: '/admin/calculadora', label: 'Calculadora', icon: '🧮' },
   { href: '/admin/clientes', label: 'Clientes', icon: '👥' },
   { href: '/admin/ajustes', label: 'Ajustes', icon: '⚙' },
 ]

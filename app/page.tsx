@@ -55,7 +55,7 @@ export default async function Home() {
             Nueva Cotización
           </h1>
           <p className="mt-2 text-base text-zinc-500">
-            Diseñe experiencias a medida. El sistema calculará automáticamente los márgenes y generará el enlace de pago.
+            Diseñe experiencias a medida. Una vez generada la cotización, se le notificará a Mango&Coffee Tours para dar el seguimiento.
           </p>
         </div>
         
