@@ -822,9 +822,15 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                     type="number"
                     min="0"
                     max="100"
-                    step="0.5"
-                    value={margen_cotizacion ?? margenGlobal}
-                    onChange={(e) => setValue("margen_cotizacion", Number(e.target.value))}
+                    step="1"
+                    value={margen_cotizacion ?? ''}
+                    placeholder={String(margenGlobal)}
+                    onChange={(e) =>
+                      setValue(
+                        "margen_cotizacion",
+                        e.target.value === '' ? undefined : Number(e.target.value)
+                      )
+                    }
                     className="w-16 px-1.5 py-0.5 rounded text-sm text-black bg-white border border-white/30 text-right"
                   />
                   <span className="ml-auto">${pricingResult.margen.toFixed(2)}</span>
@@ -843,9 +849,15 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                     type="number"
                     min="0"
                     max="100"
-                    step="0.5"
-                    value={descuento_porcentaje ?? 0}
-                    onChange={(e) => setValue("descuento_porcentaje", Number(e.target.value))}
+                    step="1"
+                    value={descuento_porcentaje ?? ''}
+                    placeholder="0"
+                    onChange={(e) =>
+                      setValue(
+                        "descuento_porcentaje",
+                        e.target.value === '' ? undefined : Number(e.target.value)
+                      )
+                    }
                     className="w-16 px-1.5 py-0.5 rounded text-sm text-black bg-white border border-white/30 text-right"
                   />
                   <span className="ml-auto text-red-300">-${pricingResult.descuento.toFixed(2)}</span>
