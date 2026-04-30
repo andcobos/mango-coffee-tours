@@ -1126,6 +1126,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                       servicios={serviciosPDF}
                       totalFinal={pricingResult.totalFinal}
                       codigoReferencia={codigoReferencia}
+                      notas={notas || undefined}
                     />
                   }
                   fileName={`cotizacion-${clienteName.replace(/\s+/g, "-").toLowerCase() || "cliente"}.pdf`}

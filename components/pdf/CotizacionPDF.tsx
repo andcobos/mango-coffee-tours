@@ -24,6 +24,7 @@ export interface CotizacionPDFProps {
   servicios: ServicioPDF[];
   totalFinal: number;
   codigoReferencia: string;
+  notas?: string;
 }
 
 const verde = "#004b23";
@@ -218,6 +219,23 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: naranja,
   },
+  // Notas block
+  notasBlock: {
+    marginBottom: 20,
+  },
+  notasBox: {
+    backgroundColor: "#f9fafb",
+    borderRadius: 4,
+    padding: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: "#d1d5db",
+  },
+  notasTexto: {
+    fontSize: 9,
+    color: "#4b5563",
+    lineHeight: 1.6,
+    fontStyle: "italic",
+  },
   // Footer
   footer: {
     position: "absolute",
@@ -271,6 +289,7 @@ export default function CotizacionPDF({
   servicios,
   totalFinal,
   codigoReferencia,
+  notas,
 }: CotizacionPDFProps) {
   return (
     <Document>
@@ -279,7 +298,7 @@ export default function CotizacionPDF({
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.brandName}>Mango & Coffee Tours</Text>
-            <Text style={styles.brandTagline}>Experiencias de viaje en Costa Rica</Text>
+            <Text style={styles.brandTagline}>Tu próxima aventura comienza aquí</Text>
           </View>
           <View style={styles.headerRight}>
             <Text style={styles.docTitle}>COTIZACIÓN #{codigoReferencia}</Text>
@@ -356,6 +375,16 @@ export default function CotizacionPDF({
           )}
         </View>
 
+        {/* Notas */}
+        {notas && notas.trim().length > 0 && (
+          <View style={styles.notasBlock}>
+            <Text style={styles.sectionTitle}>Notas / Instrucciones Adicionales</Text>
+            <View style={styles.notasBox}>
+              <Text style={styles.notasTexto}>{notas.trim()}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Total */}
         <Text style={styles.sectionTitle}>Total</Text>
         <View style={styles.totalBlock}>
@@ -369,7 +398,7 @@ export default function CotizacionPDF({
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
-            Esta cotización es válida por 30 días a partir de su fecha de emisión.
+            Se generó la cotización, es válida por 30 días a partir de su fecha de emisión.
           </Text>
           <Text style={styles.footerBrand}>Mango & Coffee Tours</Text>
         </View>

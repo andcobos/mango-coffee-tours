@@ -235,7 +235,7 @@ export default function ServiceForm({ service }: Props) {
               <input
                 name="empresa"
                 defaultValue={service?.empresa ?? ''}
-                placeholder="Ej. Costa Rica Shuttle"
+                placeholder="Ej. Eagle Rent a Car"
                 className={INPUT_CLASS}
               />
             </div>
