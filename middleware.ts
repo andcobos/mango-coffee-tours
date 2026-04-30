@@ -4,9 +4,15 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Salida rápida para rutas que no son /admin — sin tocar Supabase
+  if (!pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+
   const isLoginPage = pathname === '/admin/login'
 
-  // Construir respuesta base que propaga cookies de sesión de Supabase
+  // Respuesta base que propaga cookies de sesión de Supabase
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -28,7 +34,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANTE: usar getUser() (no getSession()) para validar en el servidor
+  // Usar getUser() (no getSession()) para validar en el servidor de forma segura
   const { data: { user } } = await supabase.auth.getUser()
 
   // Sin sesión → solo puede estar en /admin/login
@@ -41,7 +47,7 @@ export async function middleware(request: NextRequest) {
 
   // Con sesión → validar whitelist
   const adminEmails = (process.env.ADMIN_EMAILS ?? '')
-    .replace(/^["']|["']$/g, '')   // strip comillas envolventes del valor del .env
+    .replace(/^["']|["']$/g, '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean)
@@ -49,12 +55,7 @@ export async function middleware(request: NextRequest) {
   const userEmail = (user.email ?? '').toLowerCase()
   const isWhitelisted = adminEmails.includes(userEmail)
 
-  // DEBUG — eliminar una vez confirmado el flujo correcto
-  console.log(`[Middleware] Intento de acceso de: ${userEmail} | ¿Está en lista? ${isWhitelisted}`)
-  console.log(`[Middleware] Lista blanca: [${adminEmails.join(', ')}]`)
-
   if (!isWhitelisted) {
-    // Correo no autorizado: cerrar sesión y redirigir a la raíz pública
     await supabase.auth.signOut()
     return NextResponse.redirect(new URL('/', request.url))
   }
@@ -68,5 +69,14 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    /*
+     * Ejecutar en todas las rutas EXCEPTO:
+     * - _next/static  (archivos estáticos de Next.js)
+     * - _next/image   (optimización de imágenes)
+     * - favicon.ico
+     * - archivos con extensión de imagen/fuente/svg
+     */
+    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
+  ],
 }
