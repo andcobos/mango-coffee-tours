@@ -5,6 +5,7 @@ import {
   Text,
   View,
   StyleSheet,
+  Image,
 } from "@react-pdf/renderer";
 
 export interface ServicioPDF {
@@ -55,7 +56,13 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flexDirection: "column",
-    gap: 2,
+    gap: 4,
+    justifyContent: "center",
+  },
+  logo: {
+    width: 120,
+    height: "auto",
+    marginBottom: 2,
   },
   brandName: {
     fontSize: 18,
@@ -297,7 +304,7 @@ export default function CotizacionPDF({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.brandName}>Mango & Coffee Tours</Text>
+            <Image src="/mangocoffeetours_logo.png" style={styles.logo} />
             <Text style={styles.brandTagline}>Tu próxima aventura comienza aquí</Text>
           </View>
           <View style={styles.headerRight}>
