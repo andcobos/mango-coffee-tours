@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 
-const TIPOS_VALIDOS = ['DESTINO', 'GUIA', 'ENTRADA', 'SEGURO', 'ALIMENTACION', 'KIT', 'TRANSPORTE', 'ALOJAMIENTO', 'PAQUETE', 'OTRO'] as const
+const TIPOS_VALIDOS = ['DESTINO', 'GUIA', 'ENTRADA', 'SEGURO', 'ALIMENTACION', 'KIT', 'TRANSPORTE', 'ALOJAMIENTO', 'PAQUETE', 'OTRO', 'EXTRA'] as const
 
 function parseTransporteFields(formData: FormData) {
   const empresa = (formData.get('empresa') as string) || null

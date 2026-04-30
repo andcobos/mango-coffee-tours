@@ -5,7 +5,7 @@ import { useActionState } from 'react'
 import { crearServicio, actualizarServicio } from '@/app/actions/catalogo'
 import Link from 'next/link'
 
-const TIPOS = ['DESTINO', 'GUIA', 'ENTRADA', 'SEGURO', 'ALIMENTACION', 'KIT', 'TRANSPORTE', 'ALOJAMIENTO', 'PAQUETE', 'OTRO']
+const TIPOS = ['DESTINO', 'GUIA', 'ENTRADA', 'SEGURO', 'ALIMENTACION', 'KIT', 'TRANSPORTE', 'ALOJAMIENTO', 'PAQUETE', 'OTRO', 'EXTRA']
 const TIPOS_VEHICULO = ['Sedan', 'SUV', 'Minivan', 'Microbus']
 
 interface ServiceData {
@@ -32,6 +32,7 @@ const INPUT_CLASS = 'w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ri
 function costoLabel(tipo: string): string {
   if (tipo === 'TRANSPORTE') return 'Costo por Día (USD)'
   if (tipo === 'PAQUETE') return 'Precio por Persona (USD)'
+  if (tipo === 'EXTRA') return 'Tarifa Plana (USD)'
   return 'Costo Operativo (USD)'
 }
 

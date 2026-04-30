@@ -33,6 +33,13 @@ const quoteSchema = z.object({
   insurances: z.array(z.string()).optional(),
   transports: z.array(z.string()).optional(),
   paquetes: z.array(z.string()).optional(),
+  extras: z.array(z.string()).optional(),
+  guias: z.array(z.string()).optional(),
+  alimentacion: z.array(z.string()).optional(),
+  kits: z.array(z.string()).optional(),
+  alojamientos: z.array(z.string()).optional(),
+  otros: z.array(z.string()).optional(),
+  notas: z.string().optional(),
 });
 
 export type QuoteFormValues = z.infer<typeof quoteSchema>;
@@ -63,6 +70,12 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
   const catalogSeguros = servicios.filter((s) => s.tipo === "SEGURO");
   const catalogTransportes = servicios.filter((s) => s.tipo === "TRANSPORTE");
   const catalogPaquetes = servicios.filter((s) => s.tipo === "PAQUETE");
+  const catalogExtras = servicios.filter((s) => s.tipo === "EXTRA");
+  const catalogGuias = servicios.filter((s) => s.tipo === "GUIA");
+  const catalogAlimentacion = servicios.filter((s) => s.tipo === "ALIMENTACION");
+  const catalogKits = servicios.filter((s) => s.tipo === "KIT");
+  const catalogAlojamientos = servicios.filter((s) => s.tipo === "ALOJAMIENTO");
+  const catalogOtros = servicios.filter((s) => s.tipo === "OTRO");
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema) as unknown as Resolver<QuoteFormValues>,
@@ -74,6 +87,13 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
       insurances: [],
       transports: [],
       paquetes: [],
+      extras: [],
+      guias: [],
+      alimentacion: [],
+      kits: [],
+      alojamientos: [],
+      otros: [],
+      notas: "",
     },
   });
 
@@ -98,6 +118,12 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
   const selectedInsurances = watch("insurances");
   const selectedTransports = watch("transports");
   const selectedPaquetes = watch("paquetes");
+  const selectedExtras = watch("extras");
+  const selectedGuias = watch("guias");
+  const selectedAlimentacion = watch("alimentacion");
+  const selectedKits = watch("kits");
+  const selectedAlojamientos = watch("alojamientos");
+  const selectedOtros = watch("otros");
   const pax = watch("pax");
   const startDate = watch("startDate");
   const endDate = watch("endDate");
@@ -135,8 +161,40 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
       if (s) totalCost += s.costo_operativo * cantidadDias + (s.costo_extra_valor ?? 0);
     });
 
+    // Extras: tarifa plana (NO multiplica por pax ni por días)
+    selectedExtras?.forEach((id) => {
+      const s = catalogExtras.find((e) => e.id === id);
+      if (s) totalCost += s.costo_operativo * 1;
+    });
+
+    // Por pax: guías, alimentación, kits, alojamientos, otros
+    selectedGuias?.forEach((id) => {
+      const s = catalogGuias.find((g) => g.id === id);
+      if (s) totalCost += s.costo_operativo * currentPax;
+    });
+
+    selectedAlimentacion?.forEach((id) => {
+      const s = catalogAlimentacion.find((a) => a.id === id);
+      if (s) totalCost += s.costo_operativo * currentPax;
+    });
+
+    selectedKits?.forEach((id) => {
+      const s = catalogKits.find((k) => k.id === id);
+      if (s) totalCost += s.costo_operativo * currentPax;
+    });
+
+    selectedAlojamientos?.forEach((id) => {
+      const s = catalogAlojamientos.find((a) => a.id === id);
+      if (s) totalCost += s.costo_operativo * currentPax;
+    });
+
+    selectedOtros?.forEach((id) => {
+      const s = catalogOtros.find((o) => o.id === id);
+      if (s) totalCost += s.costo_operativo * currentPax;
+    });
+
     setPricingResult(calculatePrice(totalCost));
-  }, [selectedDestinations, selectedTickets, selectedInsurances, selectedTransports, selectedPaquetes, pax, startDate, endDate]);
+  }, [selectedDestinations, selectedTickets, selectedInsurances, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, pax, startDate, endDate]);
 
   // Lista de nombres de todos los servicios seleccionados
   const allSelectedIds = [
@@ -145,6 +203,12 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
     ...(selectedInsurances ?? []),
     ...(selectedTransports ?? []),
     ...(selectedPaquetes ?? []),
+    ...(selectedExtras ?? []),
+    ...(selectedGuias ?? []),
+    ...(selectedAlimentacion ?? []),
+    ...(selectedKits ?? []),
+    ...(selectedAlojamientos ?? []),
+    ...(selectedOtros ?? []),
   ];
   const selectedServiceNames = allSelectedIds
     .map((id) => servicios.find((s) => s.id === id)?.nombre_es)
@@ -417,6 +481,36 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
               </div>
             )}
 
+            {/* Guías */}
+            {catalogGuias.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Guías</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {catalogGuias.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        value={s.id}
+                        {...register("guias")}
+                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-800">{s.nombre_es}</span>
+                        {isAdmin ? (
+                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
+                        ) : (
+                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Entradas */}
             <div className="mb-5">
               <label className="block text-sm font-medium text-zinc-700 mb-2">Entradas a Atracciones</label>
@@ -448,6 +542,96 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                 </div>
               )}
             </div>
+
+            {/* Alojamiento */}
+            {catalogAlojamientos.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Alojamiento</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {catalogAlojamientos.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        value={s.id}
+                        {...register("alojamientos")}
+                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-800">{s.nombre_es}</span>
+                        {isAdmin ? (
+                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
+                        ) : (
+                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Alimentación */}
+            {catalogAlimentacion.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Alimentación</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {catalogAlimentacion.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        value={s.id}
+                        {...register("alimentacion")}
+                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-800">{s.nombre_es}</span>
+                        {isAdmin ? (
+                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
+                        ) : (
+                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Kits */}
+            {catalogKits.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Kits</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {catalogKits.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        value={s.id}
+                        {...register("kits")}
+                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-800">{s.nombre_es}</span>
+                        {isAdmin ? (
+                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
+                        ) : (
+                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Seguros */}
             <div className="mb-5">
@@ -485,6 +669,82 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                 </div>
               )}
             </div>
+
+            {/* Otros */}
+            {catalogOtros.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Otros Servicios</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {catalogOtros.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        value={s.id}
+                        {...register("otros")}
+                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-800">{s.nombre_es}</span>
+                        {isAdmin ? (
+                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
+                        ) : (
+                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Extras Adicionales */}
+            {catalogExtras.length > 0 && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-zinc-700 mb-2">Extras Adicionales</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {catalogExtras.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        value={s.id}
+                        {...register("extras")}
+                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-800">{s.nombre_es}</span>
+                        {isAdmin ? (
+                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} (tarifa plana)</span>
+                        ) : (
+                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} (tarifa plana)</span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Notas o consideraciones especiales */}
+          <div className="border-t border-zinc-100 pt-6">
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
+              Notas o consideraciones especiales
+            </label>
+            <p className="text-xs text-zinc-400 mb-2">
+              Dinos si tienes alergias, peticiones especiales o cualquier detalle que debamos saber para tu viaje.
+            </p>
+            <textarea
+              {...register("notas")}
+              rows={4}
+              placeholder="Ej. Uno de los pasajeros es celíaco, preferimos habitaciones en planta baja..."
+              className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400 resize-y"
+            />
           </div>
         </form>
       </div>
