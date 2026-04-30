@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import EstadoButtons from '@/components/admin/cotizaciones/EstadoButtons'
 
 function formatDate(date: Date | null) {
   if (!date) return '—'
@@ -53,21 +54,10 @@ export default async function CotizacionDetallePage({
           <h1 className="text-2xl font-bold text-zinc-900">{cotizacion.cliente_nombre}</h1>
           <p className="text-zinc-400 font-mono text-sm mt-0.5">#{cotizacion.id.substring(0, 6)} · {cotizacion.id}</p>
         </div>
-        <span
-          className={`mt-1 inline-flex px-3 py-1.5 rounded-full text-xs font-semibold ${
-            cotizacion.estado === 'ACEPTADA'
-              ? 'bg-green-100 text-green-700'
-              : cotizacion.estado === 'RECHAZADA'
-              ? 'bg-red-100 text-red-700'
-              : cotizacion.estado === 'ENVIADA'
-              ? 'bg-yellow-100 text-yellow-700'
-              : cotizacion.estado === 'VENCIDA'
-              ? 'bg-zinc-100 text-zinc-500'
-              : 'bg-blue-100 text-blue-700'
-          }`}
-        >
-          {cotizacion.estado ?? 'GENERADA'}
-        </span>
+        <EstadoButtons
+          cotizacionId={cotizacion.id}
+          estadoActual={cotizacion.estado ?? 'GENERADA'}
+        />
       </div>
 
       <div className="space-y-6">
@@ -95,6 +85,7 @@ export default async function CotizacionDetallePage({
             <Campo label="Creada el" value={formatDate(cotizacion.fecha_creacion ?? null)} />
             <Campo label="Vence el" value={formatDate(cotizacion.fecha_vencimiento)} />
             <Campo label="Tipo" value={cotizacion.es_paquete ? 'Paquete' : 'A la Medida'} />
+            <Campo label="Estado" value={cotizacion.estado ?? 'GENERADA'} />
           </dl>
           {cotizacion.notas_cliente && (
             <div className="mt-4 pt-4 border-t border-zinc-50">

@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
 export interface CotizacionInput {
@@ -52,4 +53,17 @@ export async function guardarCotizacion(data: CotizacionInput) {
       notas_cliente: data.notas ?? null,
     },
   })
+}
+
+export async function actualizarEstadoCotizacion(
+  id: string,
+  nuevoEstado: 'GENERADA' | 'CONFIRMADA' | 'VENCIDA'
+) {
+  await prisma.cotizaciones.update({
+    where: { id },
+    data: { estado: nuevoEstado },
+  })
+
+  revalidatePath('/admin/cotizaciones')
+  revalidatePath(`/admin/cotizaciones/${id}`)
 }
