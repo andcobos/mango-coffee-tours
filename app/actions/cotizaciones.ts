@@ -1,5 +1,6 @@
 'use server'
 
+import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
@@ -34,27 +35,45 @@ export async function guardarCotizacion(data: CotizacionInput) {
   const fechaVencimiento = new Date(hoy)
   fechaVencimiento.setDate(fechaVencimiento.getDate() + 30)
 
-  await prisma.cotizaciones.create({
-    data: {
-      cliente_nombre: data.nombre,
-      cliente_email: data.correo,
-      pax: data.pax,
-      fecha_inicio: fechaInicio,
-      fecha_fin: fechaFin,
-      idioma_preferido: data.idioma,
-      estado: 'GENERADA',
-      fecha_vencimiento: fechaVencimiento,
-      subtotal_costo: data.subtotal_costo,
-      margen_aplicado: data.margen_aplicado,
-      subtotal_venta: data.subtotal_venta,
-      iva_total: data.iva_total,
-      gran_total: data.gran_total,
-      detalles: data.detalles,
-      es_paquete: data.es_paquete,
-      notas_cliente: data.notas ?? null,
-      codigo_referencia: data.codigo_referencia,
-    },
-  })
+  try {
+    const cliente = await prisma.clientes.upsert({
+      where: { correo: data.correo },
+      update: {},
+      create: { nombre: data.nombre, correo: data.correo },
+    })
+
+    await prisma.cotizaciones.create({
+      data: {
+        cliente_id: cliente.id,
+        cliente_nombre: data.nombre,
+        cliente_email: data.correo,
+        pax: data.pax,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+        idioma_preferido: data.idioma,
+        estado: 'GENERADA',
+        fecha_vencimiento: fechaVencimiento,
+        subtotal_costo: data.subtotal_costo,
+        margen_aplicado: data.margen_aplicado,
+        subtotal_venta: data.subtotal_venta,
+        iva_total: data.iva_total,
+        gran_total: data.gran_total,
+        detalles: data.detalles,
+        es_paquete: data.es_paquete,
+        notas_cliente: data.notas ?? null,
+        codigo_referencia: data.codigo_referencia,
+      },
+    })
+  } catch (error) {
+    console.error('Error al guardar cotización:', error)
+    throw new Error('No se pudo guardar la cotización. Inténtalo de nuevo.')
+  }
+}
+
+export async function eliminarCotizacion(id: string) {
+  await prisma.cotizaciones.delete({ where: { id } })
+  revalidatePath('/admin/cotizaciones')
+  redirect('/admin/cotizaciones')
 }
 
 export async function actualizarEstadoCotizacion(

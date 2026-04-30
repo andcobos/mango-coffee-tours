@@ -523,6 +523,19 @@ model catalogo_servicios {
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clientes {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre         String         @db.VarChar(255)
+  correo         String         @unique @db.VarChar(255)
+  telefono       String?        @db.VarChar(50)
+  notas          String?
+  fecha_creacion DateTime?      @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  cotizaciones   cotizaciones[]
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model configuracion {
   id              Int      @id @default(1)
   margen_ganancia Decimal? @default(30.00) @db.Decimal(5, 2)
@@ -565,6 +578,8 @@ model cotizaciones {
   detalles             Json?                  @default("[]")
   es_paquete           Boolean?               @default(false)
   codigo_referencia    String?                @db.VarChar(10)
+  cliente_id           String?                @db.Uuid
+  clientes             clientes?              @relation(fields: [cliente_id], references: [id], onUpdate: NoAction)
   perfiles             perfiles?              @relation(fields: [creado_por], references: [id], onUpdate: NoAction)
   cotizaciones_detalle cotizaciones_detalle[]
 

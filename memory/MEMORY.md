@@ -8,7 +8,7 @@
 - Tailwind CSS v4
 
 ## Convenciones críticas de Next.js 16
-- `middleware.ts` está DEPRECADO → usar `proxy.ts` con `export function proxy()`
+- Middleware: usar `middleware.ts` en la raíz con `export function middleware()` — `proxy.ts` NO es una convención válida de Next.js
 - `params` en page/layout es `Promise<{...}>` → requiere `await params`
 - `cookies()` de `next/headers` es async → requiere `await cookies()`
 - Server Actions: deben tener `'use server'` al nivel del archivo
@@ -16,7 +16,7 @@
 
 ## Archivos clave del proyecto
 ```
-proxy.ts                              — protección de rutas /admin/*
+middleware.ts                          — protección de rutas /admin/*
 lib/auth.ts                           — utilidades de sesión (cookies)
 lib/prisma.ts                         — cliente Prisma con pool pg
 app/actions/auth.ts                   — login / logout server actions

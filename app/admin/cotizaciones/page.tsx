@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import SearchBar from '@/components/admin/SearchBar'
 
 const ESTADO_STYLES: Record<string, string> = {
   GENERADA: 'bg-blue-100 text-blue-700',
@@ -19,9 +20,23 @@ function formatCurrency(value: unknown) {
   return `$${num.toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-export default async function CotizacionesDashboard() {
+export default async function CotizacionesDashboard({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }>
+}) {
+  const { q } = (await searchParams) ?? {}
+
   const cotizaciones = await prisma.cotizaciones.findMany({
     orderBy: { fecha_creacion: 'desc' },
+    where: q
+      ? {
+          OR: [
+            { codigo_referencia: { contains: q, mode: 'insensitive' } },
+            { cliente_nombre: { contains: q, mode: 'insensitive' } },
+          ],
+        }
+      : undefined,
   })
 
   return (
@@ -31,6 +46,10 @@ export default async function CotizacionesDashboard() {
         <p className="text-zinc-500 text-sm mt-1">
           Historial de propuestas generadas para clientes.
         </p>
+      </div>
+
+      <div className="mb-4">
+        <SearchBar placeholder="Buscar por código, nombre o cliente..." />
       </div>
 
       {cotizaciones.length === 0 ? (

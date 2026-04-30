@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import EstadoButtons from '@/components/admin/cotizaciones/EstadoButtons'
+import DeleteButton from '@/components/admin/DeleteButton'
+import { eliminarCotizacion } from '@/app/actions/cotizaciones'
 
 function formatDate(date: Date | null) {
   if (!date) return '—'
@@ -59,10 +61,16 @@ export default async function CotizacionDetallePage({
             {' · '}{cotizacion.id}
           </p>
         </div>
-        <EstadoButtons
-          cotizacionId={cotizacion.id}
-          estadoActual={cotizacion.estado ?? 'GENERADA'}
-        />
+        <div className="flex items-center gap-2">
+          <EstadoButtons
+            cotizacionId={cotizacion.id}
+            estadoActual={cotizacion.estado ?? 'GENERADA'}
+          />
+          <DeleteButton
+            action={eliminarCotizacion.bind(null, cotizacion.id)}
+            confirmMessage="¿Estás seguro de que deseas eliminar esta cotización? Esta acción no se puede deshacer."
+          />
+        </div>
       </div>
 
       <div className="space-y-6">
