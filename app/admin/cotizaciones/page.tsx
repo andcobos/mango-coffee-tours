@@ -42,7 +42,7 @@ export default async function CotizacionesDashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50 text-zinc-500 text-xs uppercase tracking-wide">
-                <th className="px-5 py-3 text-left font-medium">ID / Cliente</th>
+                <th className="px-5 py-3 text-left font-medium">Ref / Cliente</th>
                 <th className="px-5 py-3 text-left font-medium">Correo</th>
                 <th className="px-5 py-3 text-left font-medium">Fecha de Viaje</th>
                 <th className="px-5 py-3 text-left font-medium">Pax</th>
@@ -56,7 +56,9 @@ export default async function CotizacionesDashboard() {
                 <tr key={c.id} className="hover:bg-zinc-50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="font-semibold text-zinc-800">{c.cliente_nombre}</div>
-                    <div className="text-xs text-zinc-400 font-mono">#{c.id.substring(0, 6)}</div>
+                    <div className="text-xs text-zinc-400 font-mono">
+                      {c.codigo_referencia ? `#${c.codigo_referencia}` : `#${c.id.substring(0, 6)}`}
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-zinc-600">{c.cliente_email}</td>
                   <td className="px-5 py-4 text-zinc-600">

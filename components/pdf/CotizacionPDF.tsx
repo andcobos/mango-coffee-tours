@@ -23,6 +23,7 @@ export interface CotizacionPDFProps {
   paqueteDescripcion?: string;
   servicios: ServicioPDF[];
   totalFinal: number;
+  codigoReferencia: string;
 }
 
 const verde = "#004b23";
@@ -269,6 +270,7 @@ export default function CotizacionPDF({
   paqueteDescripcion,
   servicios,
   totalFinal,
+  codigoReferencia,
 }: CotizacionPDFProps) {
   return (
     <Document>
@@ -280,7 +282,7 @@ export default function CotizacionPDF({
             <Text style={styles.brandTagline}>Experiencias de viaje en Costa Rica</Text>
           </View>
           <View style={styles.headerRight}>
-            <Text style={styles.docTitle}>COTIZACIÓN</Text>
+            <Text style={styles.docTitle}>COTIZACIÓN #{codigoReferencia}</Text>
             <Text style={styles.docSubtitle}>
               Generada el {formatDate(new Date().toISOString().split("T")[0])}
             </Text>

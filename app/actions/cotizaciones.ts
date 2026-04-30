@@ -18,6 +18,7 @@ export interface CotizacionInput {
   detalles: { nombre: string; precio: number }[]
   es_paquete: boolean
   notas?: string
+  codigo_referencia: string
 }
 
 export async function guardarCotizacion(data: CotizacionInput) {
@@ -51,6 +52,7 @@ export async function guardarCotizacion(data: CotizacionInput) {
       detalles: data.detalles,
       es_paquete: data.es_paquete,
       notas_cliente: data.notas ?? null,
+      codigo_referencia: data.codigo_referencia,
     },
   })
 }

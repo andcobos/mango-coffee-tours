@@ -564,6 +564,7 @@ model cotizaciones {
   notas_cliente        String?
   detalles             Json?                  @default("[]")
   es_paquete           Boolean?               @default(false)
+  codigo_referencia    String?                @db.VarChar(10)
   perfiles             perfiles?              @relation(fields: [creado_por], references: [id], onUpdate: NoAction)
   cotizaciones_detalle cotizaciones_detalle[]
 

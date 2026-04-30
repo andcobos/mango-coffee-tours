@@ -52,7 +52,12 @@ export default async function CotizacionDetallePage({
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">{cotizacion.cliente_nombre}</h1>
-          <p className="text-zinc-400 font-mono text-sm mt-0.5">#{cotizacion.id.substring(0, 6)} · {cotizacion.id}</p>
+          <p className="text-zinc-400 font-mono text-sm mt-0.5">
+            {cotizacion.codigo_referencia
+              ? `#${cotizacion.codigo_referencia}`
+              : `#${cotizacion.id.substring(0, 6)}`}
+            {' · '}{cotizacion.id}
+          </p>
         </div>
         <EstadoButtons
           cotizacionId={cotizacion.id}

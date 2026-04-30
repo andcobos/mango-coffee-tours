@@ -82,6 +82,10 @@ function NivelEsfuerzoIndicator({ nivel }: { nivel: string }) {
   );
 }
 
+function generarCodigoReferencia(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
 /** Días de tour entre dos fechas ISO. Mismo día = 1. */
 function calcularDias(startDate: string, endDate: string): number {
   if (!startDate || !endDate) return 1;
@@ -137,6 +141,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
   } = form;
 
   const [isClient, setIsClient] = useState(false);
+  const [codigoReferencia] = useState(() => generarCodigoReferencia());
 
   useEffect(() => {
     setIsClient(true);
@@ -1102,6 +1107,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
               detalles: serviciosPDF,
               es_paquete: esPaquete,
               notas: notas || undefined,
+              codigo_referencia: codigoReferencia,
             };
 
             return (
@@ -1119,6 +1125,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                       paqueteDescripcion={paqueteSeleccionado?.descripcion ?? undefined}
                       servicios={serviciosPDF}
                       totalFinal={pricingResult.totalFinal}
+                      codigoReferencia={codigoReferencia}
                     />
                   }
                   fileName={`cotizacion-${clienteName.replace(/\s+/g, "-").toLowerCase() || "cliente"}.pdf`}
