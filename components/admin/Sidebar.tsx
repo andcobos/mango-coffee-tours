@@ -8,6 +8,7 @@ const navLinks = [
   { href: '/admin', label: 'Dashboard', icon: '▦' },
   { href: '/admin/catalogo', label: 'Catálogo de Servicios', icon: '☰' },
   { href: '/admin/cotizar', label: 'Generar Cotización', icon: '✎' },
+  { href: '/admin/ajustes', label: 'Ajustes', icon: '⚙' },
 ]
 
 export default function Sidebar() {

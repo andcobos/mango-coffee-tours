@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useForm, Controller, SubmitHandler, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { calculatePrice } from "@/lib/calculator";
 
 export interface ServicioCatalogo {
   id: string;
@@ -40,6 +39,8 @@ const quoteSchema = z.object({
   alojamientos: z.array(z.string()).optional(),
   otros: z.array(z.string()).optional(),
   notas: z.string().optional(),
+  margen_cotizacion: z.coerce.number().min(0).max(100).optional(),
+  descuento_porcentaje: z.coerce.number().min(0).max(100).optional(),
 });
 
 export type QuoteFormValues = z.infer<typeof quoteSchema>;
@@ -47,12 +48,9 @@ export type QuoteFormValues = z.infer<typeof quoteSchema>;
 interface Props {
   servicios: ServicioCatalogo[];
   isAdmin?: boolean;
+  margenGlobal?: number;
 }
 
-/** Precio al público por unidad: costo + 30% margen + 13% IVA */
-function precioPublico(costo: number): number {
-  return costo * 1.3 * 1.13;
-}
 
 /** Días de tour entre dos fechas ISO. Mismo día = 1. */
 function calcularDias(startDate: string, endDate: string): number {
@@ -64,7 +62,7 @@ function calcularDias(startDate: string, endDate: string): number {
   return Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1);
 }
 
-export default function QuoteForm({ servicios, isAdmin = false }: Props) {
+export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 30 }: Props) {
   const catalogDestinos = servicios.filter((s) => s.tipo === "DESTINO");
   const catalogEntradas = servicios.filter((s) => s.tipo === "ENTRADA");
   const catalogSeguros = servicios.filter((s) => s.tipo === "SEGURO");
@@ -94,6 +92,8 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
       alojamientos: [],
       otros: [],
       notas: "",
+      margen_cotizacion: margenGlobal,
+      descuento_porcentaje: 0,
     },
   });
 
@@ -102,6 +102,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = form;
 
@@ -111,6 +112,8 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
     subtotalVenta: 0,
     iva: 0,
     granTotal: 0,
+    descuento: 0,
+    totalFinal: 0,
   });
 
   const selectedDestinations = watch("destinations");
@@ -124,13 +127,21 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
   const selectedKits = watch("kits");
   const selectedAlojamientos = watch("alojamientos");
   const selectedOtros = watch("otros");
+  const margen_cotizacion = watch("margen_cotizacion");
+  const descuento_porcentaje = watch("descuento_porcentaje");
   const pax = watch("pax");
   const startDate = watch("startDate");
   const endDate = watch("endDate");
 
+  /** Precio público unitario usando el margen dinámico actual + IVA 13% */
+  const getPrecioPublicoUnitario = (costoOperativo: number): number => {
+    return costoOperativo * (1 + (Number(margen_cotizacion ?? margenGlobal) / 100)) * 1.13;
+  };
+
   useEffect(() => {
     let totalCost = 0;
-    const currentPax = pax || 1;
+    // Number() explícito: watch() devuelve el valor raw del input (puede ser string)
+    const currentPax = Number(pax) || 1;
     const cantidadDias = calcularDias(startDate, endDate);
 
     // Por pax
@@ -193,8 +204,27 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
       if (s) totalCost += s.costo_operativo * currentPax;
     });
 
-    setPricingResult(calculatePrice(totalCost));
-  }, [selectedDestinations, selectedTickets, selectedInsurances, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, pax, startDate, endDate]);
+    // Number() explícito en todos los valores volátiles del formulario
+    const margenDecimal = Number(margen_cotizacion ?? margenGlobal) / 100;
+    // subtotalVenta = costo * (1 + margen%) → siempre mayor o igual al costo operativo
+    const subtotalVenta = totalCost * (1 + margenDecimal);
+    const iva = subtotalVenta * 0.13;
+    const granTotal = subtotalVenta + iva;
+    const descuentoMonto = granTotal * ((Number(descuento_porcentaje) || 0) / 100);
+    const totalFinal = granTotal - descuentoMonto;
+
+    console.log("MATH DEBUG:", { totalCost, margenDecimal, subtotalVenta, iva, granTotal, descuentoMonto, totalFinal });
+
+    setPricingResult({
+      costoOperativo: totalCost,
+      margen: totalCost * margenDecimal,
+      subtotalVenta,
+      iva,
+      granTotal,
+      descuento: descuentoMonto,
+      totalFinal,
+    });
+  }, [selectedDestinations, selectedTickets, selectedInsurances, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, margen_cotizacion, descuento_porcentaje, pax, startDate, endDate]);
 
   // Lista de nombres de todos los servicios seleccionados
   const allSelectedIds = [
@@ -389,7 +419,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                           </span>
                         ) : (
                           <span className="text-xs text-zinc-500 mt-1">
-                            ${precioPublico(s.costo_operativo).toFixed(2)} / pax
+                            ${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax
                           </span>
                         )}
                       </div>
@@ -429,7 +459,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -472,7 +502,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                               : ""}
                           </span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / día</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / día</span>
                         )}
                       </div>
                     </label>
@@ -502,7 +532,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -534,7 +564,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -564,7 +594,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -594,7 +624,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -624,7 +654,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -661,7 +691,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -691,7 +721,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} / pax</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
                         )}
                       </div>
                     </label>
@@ -721,7 +751,7 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                         {isAdmin ? (
                           <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} (tarifa plana)</span>
                         ) : (
-                          <span className="text-xs text-zinc-500">${precioPublico(s.costo_operativo).toFixed(2)} (tarifa plana)</span>
+                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} (tarifa plana)</span>
                         )}
                       </div>
                     </label>
@@ -786,9 +816,18 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                   <span className="text-emerald-100">Costo Operativo:</span>
                   <span>${pricingResult.costoOperativo.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-emerald-100">Margen (30%):</span>
-                  <span>${pricingResult.margen.toFixed(2)}</span>
+                <div className="flex items-center gap-2 pb-1">
+                  <span className="text-emerald-100 shrink-0">Margen (%):</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={margen_cotizacion ?? margenGlobal}
+                    onChange={(e) => setValue("margen_cotizacion", Number(e.target.value))}
+                    className="w-16 px-1.5 py-0.5 rounded text-sm text-black bg-white border border-white/30 text-right"
+                  />
+                  <span className="ml-auto">${pricingResult.margen.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-white/20">
                   <span className="text-emerald-100">Subtotal Venta:</span>
@@ -798,16 +837,29 @@ export default function QuoteForm({ servicios, isAdmin = false }: Props) {
                   <span className="text-emerald-100">IVA (13%):</span>
                   <span>${pricingResult.iva.toFixed(2)}</span>
                 </div>
+                <div className="flex items-center gap-2 pb-3 border-b border-white/20">
+                  <span className="text-emerald-100 shrink-0">Descuento (%):</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={descuento_porcentaje ?? 0}
+                    onChange={(e) => setValue("descuento_porcentaje", Number(e.target.value))}
+                    className="w-16 px-1.5 py-0.5 rounded text-sm text-black bg-white border border-white/30 text-right"
+                  />
+                  <span className="ml-auto text-red-300">-${pricingResult.descuento.toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between items-center text-lg font-bold pt-2 text-[#f77f00]">
                   <span>Gran Total:</span>
-                  <span>${pricingResult.granTotal.toFixed(2)}</span>
+                  <span>${pricingResult.totalFinal.toFixed(2)}</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex justify-between items-center text-lg font-bold pt-2 text-[#f77f00]">
                   <span>Total a Pagar:</span>
-                  <span>${pricingResult.granTotal.toFixed(2)}</span>
+                  <span>${pricingResult.totalFinal.toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-emerald-100/80 text-center pt-1">
                   Todos los precios incluyen IVA

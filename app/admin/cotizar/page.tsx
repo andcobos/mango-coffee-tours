@@ -22,6 +22,9 @@ export default async function AdminCotizarPage() {
     descripcion: s.descripcion ?? null,
   }))
 
+  const config = await prisma.configuracion.findFirst()
+  const margenGlobal = config?.margen_ganancia ? Number(config.margen_ganancia) : 30
+
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -30,7 +33,7 @@ export default async function AdminCotizarPage() {
           Genera una cotización exprés para un cliente por teléfono o en persona.
         </p>
       </div>
-      <QuoteForm servicios={servicios} isAdmin={true} />
+      <QuoteForm servicios={servicios} isAdmin={true} margenGlobal={margenGlobal} />
     </div>
   )
 }

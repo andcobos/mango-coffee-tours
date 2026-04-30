@@ -22,6 +22,9 @@ export default async function Home() {
     descripcion: s.descripcion ?? null,
   }));
 
+  const config = await prisma.configuracion.findFirst();
+  const margenGlobal = config?.margen_ganancia ? Number(config.margen_ganancia) : 30;
+
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50 font-sans selection:bg-[#f77f00] selection:text-white">
       {/* Header Corporativo */}
@@ -52,7 +55,7 @@ export default async function Home() {
           </p>
         </div>
         
-        <QuoteForm servicios={servicios} />
+        <QuoteForm servicios={servicios} margenGlobal={margenGlobal} />
       </main>
 
       {/* Footer */}
