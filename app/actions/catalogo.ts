@@ -17,6 +17,14 @@ function parseTransporteFields(formData: FormData) {
   return { empresa, tipo_vehiculo, capacidad_pasajeros, costo_extra_nombre, costo_extra_valor }
 }
 
+function parsePaqueteFields(formData: FormData) {
+  const nivel_esfuerzo = (formData.get('nivel_esfuerzo') as string) || null
+  const imagen_url = (formData.get('imagen_url') as string) || null
+  const link_google_maps = (formData.get('link_google_maps') as string) || null
+  const link_punto_encuentro = (formData.get('link_punto_encuentro') as string) || null
+  return { nivel_esfuerzo, imagen_url, link_google_maps, link_punto_encuentro }
+}
+
 export async function crearServicio(
   _prevState: { error: string } | undefined,
   formData: FormData
@@ -40,11 +48,15 @@ export async function crearServicio(
     costo_extra_nombre: null, costo_extra_valor: null,
   }
 
+  const paqueteFields = tipo === 'PAQUETE' ? parsePaqueteFields(formData) : {
+    nivel_esfuerzo: null, imagen_url: null, link_google_maps: null, link_punto_encuentro: null,
+  }
+
   try {
     await prisma.catalogo_servicios.create({
       data: {
         tipo, nombre_es, nombre_en, costo_operativo: costo, rango_edad, activo: true,
-        descripcion, ...transporteFields,
+        descripcion, ...transporteFields, ...paqueteFields,
       },
     })
   } catch {
@@ -74,10 +86,14 @@ export async function actualizarServicio(
   const costo = parseFloat(costo_raw)
   if (isNaN(costo) || costo < 0) return { error: 'El costo operativo debe ser un número válido.' }
 
-  // Si cambia a otro tipo, limpiamos los campos de transporte
+  // Si cambia a otro tipo, limpiamos los campos específicos
   const transporteFields = tipo === 'TRANSPORTE' ? parseTransporteFields(formData) : {
     empresa: null, tipo_vehiculo: null, capacidad_pasajeros: null,
     costo_extra_nombre: null, costo_extra_valor: null,
+  }
+
+  const paqueteFields = tipo === 'PAQUETE' ? parsePaqueteFields(formData) : {
+    nivel_esfuerzo: null, imagen_url: null, link_google_maps: null, link_punto_encuentro: null,
   }
 
   try {
@@ -85,7 +101,7 @@ export async function actualizarServicio(
       where: { id },
       data: {
         tipo, nombre_es, nombre_en, costo_operativo: costo, rango_edad,
-        descripcion, ...transporteFields,
+        descripcion, ...transporteFields, ...paqueteFields,
       },
     })
   } catch {

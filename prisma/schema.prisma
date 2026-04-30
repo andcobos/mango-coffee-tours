@@ -513,6 +513,10 @@ model catalogo_servicios {
   costo_extra_nombre   String?
   costo_extra_valor    Decimal?               @db.Decimal(10, 2)
   descripcion          String?
+  nivel_esfuerzo       String?
+  imagen_url           String?
+  link_google_maps     String?
+  link_punto_encuentro String?
   cotizaciones_detalle cotizaciones_detalle[]
 
   @@schema("public")

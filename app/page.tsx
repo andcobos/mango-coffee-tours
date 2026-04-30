@@ -20,6 +20,10 @@ export default async function Home() {
     costo_extra_nombre: s.costo_extra_nombre ?? null,
     costo_extra_valor: s.costo_extra_valor != null ? Number(s.costo_extra_valor) : null,
     descripcion: s.descripcion ?? null,
+    nivel_esfuerzo: s.nivel_esfuerzo ?? null,
+    imagen_url: s.imagen_url ?? null,
+    link_google_maps: s.link_google_maps ?? null,
+    link_punto_encuentro: s.link_punto_encuentro ?? null,
   }));
 
   const config = await prisma.configuracion.findFirst();

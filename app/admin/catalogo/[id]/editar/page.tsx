@@ -29,6 +29,10 @@ export default async function EditarServicioPage({ params }: Props) {
     costo_extra_nombre: servicio.costo_extra_nombre ?? null,
     costo_extra_valor: servicio.costo_extra_valor != null ? Number(servicio.costo_extra_valor) : null,
     descripcion: servicio.descripcion ?? null,
+    nivel_esfuerzo: servicio.nivel_esfuerzo ?? null,
+    imagen_url: servicio.imagen_url ?? null,
+    link_google_maps: servicio.link_google_maps ?? null,
+    link_punto_encuentro: servicio.link_punto_encuentro ?? null,
   }
 
   return (

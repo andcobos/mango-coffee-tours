@@ -21,6 +21,10 @@ interface ServiceData {
   costo_extra_nombre: string | null
   costo_extra_valor: number | null
   descripcion: string | null
+  nivel_esfuerzo: string | null
+  imagen_url: string | null
+  link_google_maps: string | null
+  link_punto_encuentro: string | null
 }
 
 interface Props {
@@ -116,6 +120,72 @@ export default function ServiceForm({ service }: Props) {
             placeholder={"- Traslado aeropuerto\n- Tour volcán 1 día\n- Seguro incluido"}
             className={`${INPUT_CLASS} resize-y`}
           />
+        </div>
+      )}
+
+      {/* Campos exclusivos de PAQUETE */}
+      {isPaquete && (
+        <div className="border border-zinc-200 rounded-xl p-4 space-y-4 bg-zinc-50">
+          <p className="text-sm font-semibold text-zinc-700">Detalles del Paquete</p>
+
+          {/* Nivel de esfuerzo */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
+              Nivel de Esfuerzo <span className="text-zinc-400 text-xs">(opcional)</span>
+            </label>
+            <select
+              name="nivel_esfuerzo"
+              defaultValue={service?.nivel_esfuerzo ?? ''}
+              className="w-full px-3 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#004b23] focus:border-transparent outline-none transition-all bg-white text-black"
+            >
+              <option value="">Sin especificar</option>
+              <option value="BAJO">BAJO</option>
+              <option value="INTERMEDIO">INTERMEDIO</option>
+              <option value="ALTO">ALTO</option>
+            </select>
+          </div>
+
+          {/* Imagen URL */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-1">
+              URL de Imagen <span className="text-zinc-400 text-xs">(opcional)</span>
+            </label>
+            <input
+              name="imagen_url"
+              type="text"
+              defaultValue={service?.imagen_url ?? ''}
+              placeholder="https://..."
+              className={INPUT_CLASS}
+            />
+          </div>
+
+          {/* Links */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">
+                Link Google Maps <span className="text-zinc-400 text-xs">(opcional)</span>
+              </label>
+              <input
+                name="link_google_maps"
+                type="text"
+                defaultValue={service?.link_google_maps ?? ''}
+                placeholder="https://maps.google.com/..."
+                className={INPUT_CLASS}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">
+                Link Punto de Encuentro <span className="text-zinc-400 text-xs">(opcional)</span>
+              </label>
+              <input
+                name="link_punto_encuentro"
+                type="text"
+                defaultValue={service?.link_punto_encuentro ?? ''}
+                placeholder="https://..."
+                className={INPUT_CLASS}
+              />
+            </div>
+          </div>
         </div>
       )}
 

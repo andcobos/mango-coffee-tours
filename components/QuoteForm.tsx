@@ -18,6 +18,10 @@ export interface ServicioCatalogo {
   costo_extra_nombre: string | null;
   costo_extra_valor: number | null;
   descripcion: string | null;
+  nivel_esfuerzo: string | null;
+  imagen_url: string | null;
+  link_google_maps: string | null;
+  link_punto_encuentro: string | null;
 }
 
 const quoteSchema = z.object({
@@ -29,7 +33,7 @@ const quoteSchema = z.object({
   language: z.enum(["ES", "EN"]),
   destinations: z.array(z.string()).min(1, "Selecciona al menos un destino"),
   tickets: z.array(z.string()).optional(),
-  insurances: z.array(z.string()).optional(),
+  seguros: z.record(z.string(), z.number()).optional(),
   transports: z.array(z.string()).optional(),
   paquetes: z.array(z.string()).optional(),
   extras: z.array(z.string()).optional(),
@@ -51,6 +55,29 @@ interface Props {
   margenGlobal?: number;
 }
 
+
+/** Indicador visual de nivel de esfuerzo (3 barritas tipo señal) */
+function NivelEsfuerzoIndicator({ nivel }: { nivel: string }) {
+  const colors =
+    nivel === "BAJO"
+      ? ["bg-green-500", "bg-gray-300", "bg-gray-300"]
+      : nivel === "INTERMEDIO"
+      ? ["bg-orange-500", "bg-orange-500", "bg-gray-300"]
+      : ["bg-red-500", "bg-red-500", "bg-red-500"];
+
+  const label = nivel === "BAJO" ? "Bajo" : nivel === "INTERMEDIO" ? "Intermedio" : "Alto";
+
+  return (
+    <div
+      title={`Esfuerzo: ${label}`}
+      className="absolute top-2 left-2 flex items-end gap-0.5 bg-black/40 backdrop-blur-sm rounded px-1.5 py-1"
+    >
+      <div className={`w-1.5 h-3 rounded-sm ${colors[0]}`} />
+      <div className={`w-1.5 h-4 rounded-sm ${colors[1]}`} />
+      <div className={`w-1.5 h-5 rounded-sm ${colors[2]}`} />
+    </div>
+  );
+}
 
 /** Días de tour entre dos fechas ISO. Mismo día = 1. */
 function calcularDias(startDate: string, endDate: string): number {
@@ -82,7 +109,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       language: "ES",
       destinations: [],
       tickets: [],
-      insurances: [],
+      seguros: {},
       transports: [],
       paquetes: [],
       extras: [],
@@ -116,9 +143,14 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
     totalFinal: 0,
   });
 
+  const pax = watch("pax");
+  const startDate = watch("startDate");
+  const endDate = watch("endDate");
+  const margen_cotizacion = watch("margen_cotizacion");
+  const descuento_porcentaje = watch("descuento_porcentaje");
   const selectedDestinations = watch("destinations");
   const selectedTickets = watch("tickets");
-  const selectedInsurances = watch("insurances");
+  const selectedSeguros = watch("seguros") || {};
   const selectedTransports = watch("transports");
   const selectedPaquetes = watch("paquetes");
   const selectedExtras = watch("extras");
@@ -127,11 +159,9 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
   const selectedKits = watch("kits");
   const selectedAlojamientos = watch("alojamientos");
   const selectedOtros = watch("otros");
-  const margen_cotizacion = watch("margen_cotizacion");
-  const descuento_porcentaje = watch("descuento_porcentaje");
-  const pax = watch("pax");
-  const startDate = watch("startDate");
-  const endDate = watch("endDate");
+
+  const currentPax = Number(pax) || 1;
+  const totalSegurosSeleccionados = Object.values(selectedSeguros).reduce((a, b) => a + b, 0);
 
   /** Precio público unitario usando el margen dinámico actual + IVA 13% */
   const getPrecioPublicoUnitario = (costoOperativo: number): number => {
@@ -140,8 +170,6 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
 
   useEffect(() => {
     let totalCost = 0;
-    // Number() explícito: watch() devuelve el valor raw del input (puede ser string)
-    const currentPax = Number(pax) || 1;
     const cantidadDias = calcularDias(startDate, endDate);
 
     // Por pax
@@ -155,9 +183,12 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       if (s) totalCost += s.costo_operativo * currentPax;
     });
 
-    selectedInsurances?.forEach((id) => {
-      const s = catalogSeguros.find((sg) => sg.id === id);
-      if (s) totalCost += s.costo_operativo * currentPax;
+    // Seguros: costo por cantidad elegida individualmente (NO por currentPax)
+    Object.entries(selectedSeguros).forEach(([id, qty]) => {
+      if (qty > 0) {
+        const s = catalogSeguros.find((sg) => sg.id === id);
+        if (s) totalCost += s.costo_operativo * qty;
+      }
     });
 
     // Paquetes: precio por persona × pax
@@ -224,13 +255,12 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       descuento: descuentoMonto,
       totalFinal,
     });
-  }, [selectedDestinations, selectedTickets, selectedInsurances, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, margen_cotizacion, descuento_porcentaje, pax, startDate, endDate]);
+  }, [selectedDestinations, selectedTickets, selectedSeguros, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, margen_cotizacion, descuento_porcentaje, currentPax, startDate, endDate]);
 
   // Lista de nombres de todos los servicios seleccionados
   const allSelectedIds = [
     ...(selectedDestinations ?? []),
     ...(selectedTickets ?? []),
-    ...(selectedInsurances ?? []),
     ...(selectedTransports ?? []),
     ...(selectedPaquetes ?? []),
     ...(selectedExtras ?? []),
@@ -398,30 +428,83 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   {catalogPaquetes.map((s) => (
                     <label
                       key={s.id}
-                      className="flex items-start space-x-3 p-4 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
+                      className="relative flex flex-col border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors overflow-hidden"
                     >
-                      <input
-                        type="checkbox"
-                        value={s.id}
-                        {...register("paquetes")}
-                        className="w-4 h-4 mt-0.5 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00] shrink-0"
-                      />
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold text-zinc-800">{s.nombre_es}</span>
-                        {s.descripcion && (
-                          <p className="text-xs text-zinc-500 whitespace-pre-line leading-relaxed">
-                            {s.descripcion}
-                          </p>
-                        )}
-                        {isAdmin ? (
-                          <span className="text-xs text-zinc-500 mt-1">
-                            Costo: ${s.costo_operativo.toFixed(2)} / pax
-                          </span>
-                        ) : (
-                          <span className="text-xs text-zinc-500 mt-1">
-                            ${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax
-                          </span>
-                        )}
+                      {/* Imagen del paquete */}
+                      {s.imagen_url && (
+                        <img
+                          src={s.imagen_url}
+                          alt={s.nombre_es}
+                          className="w-full h-40 object-cover"
+                        />
+                      )}
+
+                      {/* Indicador de nivel de esfuerzo (absoluto sobre la tarjeta) */}
+                      {s.nivel_esfuerzo && (
+                        <NivelEsfuerzoIndicator nivel={s.nivel_esfuerzo} />
+                      )}
+
+                      {/* Contenido */}
+                      <div className="flex items-start space-x-3 p-4">
+                        <input
+                          type="checkbox"
+                          value={s.id}
+                          {...register("paquetes")}
+                          className="w-4 h-4 mt-0.5 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00] shrink-0"
+                        />
+                        <div className="flex flex-col gap-1 flex-1">
+                          <span className="text-sm font-semibold text-zinc-800">{s.nombre_es}</span>
+                          {s.descripcion && (
+                            <p className="text-xs text-zinc-500 whitespace-pre-line leading-relaxed">
+                              {s.descripcion}
+                            </p>
+                          )}
+                          {isAdmin ? (
+                            <span className="text-xs text-zinc-500 mt-1">
+                              Costo: ${s.costo_operativo.toFixed(2)} / pax
+                            </span>
+                          ) : (
+                            <span className="text-xs text-zinc-500 mt-1">
+                              ${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax
+                            </span>
+                          )}
+
+                          {/* Links de ubicación */}
+                          {(s.link_google_maps || s.link_punto_encuentro) && (
+                            <div className="flex flex-wrap gap-3 mt-2">
+                              {s.link_google_maps && (
+                                <a
+                                  href={s.link_google_maps}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-xs text-[#004b23] hover:underline"
+                                >
+                                  <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                  </svg>
+                                  Ver en Google Maps
+                                </a>
+                              )}
+                              {s.link_punto_encuentro && (
+                                <a
+                                  href={s.link_punto_encuentro}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-xs text-[#004b23] hover:underline"
+                                >
+                                  <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                  </svg>
+                                  Punto de Encuentro
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </label>
                   ))}
@@ -665,37 +748,60 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
 
             {/* Seguros */}
             <div className="mb-5">
-              <label className="block text-sm font-medium text-zinc-700 mb-2">Seguros (por rango de edad)</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-zinc-700">Seguros (por rango de edad)</label>
+                <span className="text-xs text-zinc-400">{totalSegurosSeleccionados}/{currentPax} asignados</span>
+              </div>
               {catalogSeguros.length === 0 ? (
                 <p className="text-sm text-zinc-400 italic">No hay seguros disponibles en el catálogo.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {catalogSeguros.map((s) => (
-                    <label
-                      key={s.id}
-                      className="flex items-center space-x-3 p-3 border border-zinc-200 rounded-lg cursor-pointer hover:bg-zinc-50 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        value={s.id}
-                        {...register("insurances")}
-                        className="w-4 h-4 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00]"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-zinc-800">
-                          {s.nombre_es}
-                          {s.rango_edad && (
-                            <span className="ml-1 text-xs text-zinc-400">({s.rango_edad})</span>
+                  {catalogSeguros.map((s) => {
+                    const qty = selectedSeguros[s.id] || 0;
+                    return (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between p-3 border border-zinc-200 rounded-lg bg-white"
+                      >
+                        <div className="flex flex-col min-w-0 mr-3">
+                          <span className="text-sm font-medium text-zinc-800 truncate">
+                            {s.nombre_es}
+                            {s.rango_edad && (
+                              <span className="ml-1 text-xs text-zinc-400">({s.rango_edad})</span>
+                            )}
+                          </span>
+                          {isAdmin ? (
+                            <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / u</span>
+                          ) : (
+                            <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / u</span>
                           )}
-                        </span>
-                        {isAdmin ? (
-                          <span className="text-xs text-zinc-500">Costo: ${s.costo_operativo.toFixed(2)} / pax</span>
-                        ) : (
-                          <span className="text-xs text-zinc-500">${getPrecioPublicoUnitario(s.costo_operativo).toFixed(2)} / pax</span>
-                        )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            disabled={qty === 0}
+                            onClick={() =>
+                              setValue("seguros", { ...selectedSeguros, [s.id]: qty - 1 })
+                            }
+                            className="w-7 h-7 rounded-full border border-zinc-300 text-zinc-600 flex items-center justify-center text-lg leading-none hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            −
+                          </button>
+                          <span className="w-5 text-center text-sm font-semibold text-zinc-800">{qty}</span>
+                          <button
+                            type="button"
+                            disabled={totalSegurosSeleccionados >= currentPax}
+                            onClick={() =>
+                              setValue("seguros", { ...selectedSeguros, [s.id]: qty + 1 })
+                            }
+                            className="w-7 h-7 rounded-full border border-zinc-300 text-zinc-600 flex items-center justify-center text-lg leading-none hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                    </label>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -796,7 +902,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
               </div>
             )}
 
-            {selectedServiceNames.length > 0 && (
+            {(selectedServiceNames.length > 0 || totalSegurosSeleccionados > 0) && (
               <div className="pb-3 border-b border-white/20">
                 <p className="text-emerald-100 mb-2">Servicios incluidos:</p>
                 <ul className="space-y-1">
@@ -806,6 +912,23 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                       <span>{name}</span>
                     </li>
                   ))}
+                  {Object.entries(selectedSeguros)
+                    .filter(([, qty]) => qty > 0)
+                    .map(([id, qty]) => {
+                      const s = catalogSeguros.find((sg) => sg.id === id);
+                      if (!s) return null;
+                      return (
+                        <li key={id} className="flex items-start justify-between gap-1.5 text-xs">
+                          <span className="flex items-start gap-1.5">
+                            <span className="text-[#f77f00] mt-0.5 shrink-0">✓</span>
+                            <span>{qty}x {s.nombre_es}</span>
+                          </span>
+                          <span className="text-emerald-200 shrink-0">
+                            ${(getPrecioPublicoUnitario(s.costo_operativo) * qty).toFixed(2)}
+                          </span>
+                        </li>
+                      );
+                    })}
                 </ul>
               </div>
             )}
