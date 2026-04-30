@@ -1,3 +1,4 @@
+import Image from "next/image";
 import QuoteForm from "@/components/QuoteForm";
 import { prisma } from "@/lib/prisma";
 
@@ -33,15 +34,15 @@ export default async function Home() {
     <div className="flex flex-col min-h-screen bg-zinc-50 font-sans selection:bg-[#f77f00] selection:text-white">
       {/* Header Corporativo */}
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#f77f00] flex items-center justify-center text-white font-bold text-xl">
-              M
-            </div>
-            <span className="font-bold text-xl text-[#004b23] tracking-tight">
-              Mango & Coffee <span className="font-light text-zinc-500">Tours</span>
-            </span>
-          </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <Image
+            src="/mangocoffeetours_logo.png"
+            alt="Mango & Coffee Tours"
+            width={120}
+            height={60}
+            className="object-contain"
+            priority
+          />
           <div className="text-sm text-zinc-500 hidden sm:block">
             Sistema de Automatización de Propuestas
           </div>

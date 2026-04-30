@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 
@@ -25,16 +26,15 @@ export default function Sidebar() {
   return (
     <aside className="w-64 min-h-screen bg-[#004b23] text-white flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#f77f00] flex items-center justify-center font-bold text-xl">
-            M
-          </div>
-          <div className="leading-tight">
-            <p className="font-bold text-sm">Mango & Coffee</p>
-            <p className="text-xs text-emerald-300">Panel Admin</p>
-          </div>
-        </div>
+      <div className="px-6 py-6 border-b border-white/10 flex items-center">
+        <Image
+          src="/mangocoffeetours_logo.png"
+          alt="Mango & Coffee Tours"
+          width={120}
+          height={60}
+          className="object-contain"
+          priority
+        />
       </div>
 
       {/* Navigation */}
