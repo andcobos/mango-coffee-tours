@@ -262,7 +262,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
 
     setPricingResult({
       costoOperativo: totalCost,
-      margen: totalCost * margenDecimal,
+      margen: subtotalVenta - totalCost,
       subtotalVenta,
       iva,
       granTotal,
