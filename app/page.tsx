@@ -8,7 +8,7 @@ export default async function Home() {
     orderBy: { nombre_es: "asc" },
   });
 
-  const servicios = raw.map((s) => ({
+  const servicios = raw.map((s: (typeof raw)[number]) => ({
     id: s.id,
     tipo: s.tipo,
     nombre_es: s.nombre_es,
