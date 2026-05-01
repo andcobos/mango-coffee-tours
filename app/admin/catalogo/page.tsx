@@ -9,6 +9,8 @@ async function getServicios() {
   })
 }
 
+type Servicio = Awaited<ReturnType<typeof getServicios>>[number]
+
 export default async function CatalogoPage() {
   const servicios = await getServicios()
 
@@ -52,7 +54,7 @@ export default async function CatalogoPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {servicios.map((s) => (
+                {servicios.map((s: Servicio) => (
                   <tr key={s.id} className="hover:bg-zinc-50 transition-colors">
                     <td className="px-6 py-4">
                       <span className="bg-emerald-100 text-[#004b23] text-xs font-bold px-2 py-1 rounded">
