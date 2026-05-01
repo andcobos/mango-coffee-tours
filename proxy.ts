@@ -2,7 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+// Cambiamos el nombre de la función de 'middleware' a 'proxy'
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Salida rápida para rutas que no son /admin — sin tocar Supabase
@@ -34,7 +35,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Usar getUser() (no getSession()) para validar en el servidor de forma segura
+  // Usar getUser() para validar en el servidor de forma segura
   const { data: { user } } = await supabase.auth.getUser()
 
   // Sin sesión → solo puede estar en /admin/login
@@ -71,11 +72,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Ejecutar en todas las rutas EXCEPTO:
-     * - _next/static  (archivos estáticos de Next.js)
-     * - _next/image   (optimización de imágenes)
-     * - favicon.ico
-     * - archivos con extensión de imagen/fuente/svg
+     * Ejecutar en todas las rutas EXCEPTO recursos estáticos
      */
     '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
   ],
