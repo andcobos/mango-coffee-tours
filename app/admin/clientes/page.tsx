@@ -65,7 +65,7 @@ export default async function ClientesPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-50">
-              {clientes.map((cliente) => {
+              {clientes.map((cliente: (typeof clientes)[number]) => {
                 const total = cliente._count.cotizaciones
                 return (
                   <tr key={cliente.id} className="hover:bg-zinc-50 transition-colors">

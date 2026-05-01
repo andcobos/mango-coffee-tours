@@ -71,7 +71,7 @@ export default async function CotizacionesDashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-50">
-              {cotizaciones.map((c) => (
+              {cotizaciones.map((c: (typeof cotizaciones)[number]) => (
                 <tr key={c.id} className="hover:bg-zinc-50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="font-semibold text-zinc-800">{c.cliente_nombre}</div>

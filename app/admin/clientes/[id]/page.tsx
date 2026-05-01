@@ -21,14 +21,8 @@ const ESTADO_STYLES: Record<string, string> = {
   VENCIDA: 'bg-red-50 text-red-600 border-red-200',
 }
 
-export default async function ClientePerfilPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-
-  const cliente = await prisma.clientes.findUnique({
+async function getCliente(id: string) {
+  return prisma.clientes.findUnique({
     where: { id },
     include: {
       cotizaciones: {
@@ -36,6 +30,18 @@ export default async function ClientePerfilPage({
       },
     },
   })
+}
+
+type Cotizacion = NonNullable<Awaited<ReturnType<typeof getCliente>>>['cotizaciones'][number]
+
+export default async function ClientePerfilPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+
+  const cliente = await getCliente(id)
 
   if (!cliente) notFound()
 
@@ -118,7 +124,7 @@ export default async function ClientePerfilPage({
               </p>
             ) : (
               <div className="space-y-3">
-                {cliente.cotizaciones.map((cot) => {
+                {cliente.cotizaciones.map((cot: Cotizacion) => {
                   const estado = cot.estado ?? 'GENERADA'
                   const estadoStyle = ESTADO_STYLES[estado] ?? 'bg-zinc-50 text-zinc-600 border-zinc-200'
                   const ref = cot.codigo_referencia
