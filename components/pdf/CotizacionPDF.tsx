@@ -345,13 +345,32 @@ export default function CotizacionPDF({
           <Text style={styles.sectionTitle}>Servicios</Text>
 
           {esPaquete ? (
-            <View style={styles.packageBox}>
-              <Text style={[styles.infoLabel, { marginBottom: 6 }]}>Paquete Seleccionado</Text>
-              <Text style={styles.packageName}>{paqueteNombre || "—"}</Text>
-              {paqueteDescripcion ? (
-                <Text style={styles.packageDesc}>{paqueteDescripcion}</Text>
-              ) : null}
-            </View>
+            <>
+              <View style={styles.packageBox}>
+                <Text style={[styles.infoLabel, { marginBottom: 6 }]}>Paquete Seleccionado</Text>
+                <Text style={styles.packageName}>{paqueteNombre || "—"}</Text>
+                {paqueteDescripcion ? (
+                  <Text style={styles.packageDesc}>{paqueteDescripcion}</Text>
+                ) : null}
+              </View>
+              {servicios.length > 0 && (
+                <>
+                  <View style={styles.tableHeader}>
+                    <Text style={styles.tableHeaderNombre}>Servicio</Text>
+                    <Text style={styles.tableHeaderPrecio}>Precio</Text>
+                  </View>
+                  {servicios.map((item, index) => (
+                    <View
+                      key={index}
+                      style={[styles.tableRow, index % 2 !== 0 ? styles.tableRowAlt : {}]}
+                    >
+                      <Text style={styles.tableCell}>{item.nombre}</Text>
+                      <Text style={styles.tableCellPrecio}>{formatCurrency(item.precio)}</Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </>
           ) : (
             <>
               <Text style={[styles.infoLabel, { marginBottom: 8, color: gris }]}>

@@ -1017,7 +1017,8 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
             )}
           </div>
 
-          <button
+          {/* TODO: Habilitar el botón de automatización en la Fase 2. */}
+          {/* <button
             onClick={handleSubmit(onSubmit)}
             disabled={isSubmitting}
             className="w-full mt-8 bg-[#f77f00] hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-orange-500/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1033,7 +1034,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
             ) : (
               "Generar y Automatizar"
             )}
-          </button>
+          </button> */}
 
           {isClient && (() => {
             const esPaquete = (selectedPaquetes ?? []).length > 0;
