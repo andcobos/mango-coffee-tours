@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 
-async function getDashboardData() {
+type EstadoItem = { estado: string; count: number }
+
+async function getDashboardData(): Promise<{ total: number; granTotalSum: number; byEstado: EstadoItem[] }> {
   const [total, aggregate, byEstado] = await Promise.all([
     prisma.cotizaciones.count(),
     prisma.cotizaciones.aggregate({ _sum: { gran_total: true } }),
@@ -10,7 +12,7 @@ async function getDashboardData() {
   return {
     total,
     granTotalSum: Number(aggregate._sum.gran_total ?? 0),
-    byEstado: byEstado.map((g: (typeof byEstado)[number]) => ({ estado: g.estado ?? 'SIN ESTADO', count: g._count.id })),
+    byEstado: byEstado.map((g: (typeof byEstado)[number]): EstadoItem => ({ estado: g.estado ?? 'SIN ESTADO', count: g._count.id })),
   }
 }
 
@@ -84,7 +86,7 @@ export default async function AdminDashboard() {
           </p>
         ) : (
           <div className="divide-y divide-zinc-100">
-            {byEstado.map(({ estado, count }) => (
+            {byEstado.map(({ estado, count }: EstadoItem) => (
               <div key={estado} className="flex items-center justify-between px-6 py-4">
                 <span
                   className={`text-xs font-bold px-2.5 py-1 rounded-full ${
