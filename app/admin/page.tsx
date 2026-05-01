@@ -10,7 +10,7 @@ async function getDashboardData() {
   return {
     total,
     granTotalSum: Number(aggregate._sum.gran_total ?? 0),
-    byEstado: byEstado.map((g) => ({ estado: g.estado ?? 'SIN ESTADO', count: g._count.id })),
+    byEstado: byEstado.map((g: (typeof byEstado)[number]) => ({ estado: g.estado ?? 'SIN ESTADO', count: g._count.id })),
   }
 }
 
