@@ -42,7 +42,7 @@ export default function CalculadoraPage() {
     (sum, s) => sum + s.precio_operativo * s.personas * s.dias,
     0
   )
-  const subtotal = costoTotalOperativo * (1 + margen / 100)
+  const subtotal = costoTotalOperativo / (1 - Math.min(margen, 99.99) / 100)
   const margenDolares = subtotal - costoTotalOperativo
   const iva = subtotal * 0.13
   const granTotal = subtotal + iva
@@ -75,7 +75,7 @@ export default function CalculadoraPage() {
             className="w-24 px-3 py-2 rounded-xl border border-zinc-200 bg-zinc-50 text-sm font-semibold text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#004b23]/25 focus:border-[#004b23] transition"
           />
           <span className="text-sm text-zinc-400">
-            Fórmula: Costo × (1 + {margen}%) = Precio de venta
+            Fórmula: Costo Total / (1 - {margen}%)
           </span>
         </div>
       </div>

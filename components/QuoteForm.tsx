@@ -179,7 +179,8 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
 
   /** Precio público unitario usando el margen dinámico actual + IVA 13% */
   const getPrecioPublicoUnitario = (costoOperativo: number): number => {
-    return costoOperativo * (1 + (Number(margen_cotizacion ?? margenGlobal) / 100)) * 1.13;
+    const m = Math.min(Number(margen_cotizacion ?? margenGlobal), 99.99) / 100;
+    return (costoOperativo / (1 - m)) * 1.13;
   };
 
   useEffect(() => {
@@ -250,9 +251,8 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
     });
 
     // Number() explícito en todos los valores volátiles del formulario
-    const margenDecimal = Number(margen_cotizacion ?? margenGlobal) / 100;
-    // subtotalVenta = costo * (1 + margen%) → siempre mayor o igual al costo operativo
-    const subtotalVenta = totalCost * (1 + margenDecimal);
+    const margenDecimal = Math.min(Number(margen_cotizacion ?? margenGlobal), 99.99) / 100;
+    const subtotalVenta = totalCost / (1 - margenDecimal);
     const iva = subtotalVenta * 0.13;
     const granTotal = subtotalVenta + iva;
     const descuentoMonto = granTotal * ((Number(descuento_porcentaje) || 0) / 100);
@@ -328,7 +328,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
               <input
                 {...register("clientName")}
                 className="w-full px-4 py-2 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#f77f00] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-400"
-                placeholder="Ej. Jane Doe"
+                placeholder="Ej. Juan Perez"
               />
               {errors.clientName && (
                 <p className="text-red-500 text-xs mt-1">{errors.clientName.message}</p>

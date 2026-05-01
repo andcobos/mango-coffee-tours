@@ -23,13 +23,11 @@ export function calculatePrice(
   margenPorcentaje: number = 0.30,
   ivaPorcentaje: number = 0.13
 ): PricingResult {
-  // Margin amount = Operating Cost * Margin Percentage
-  const margen = costoOperativo * margenPorcentaje;
-  
-  // Subtotal Sale = Operating Cost + Margin amount
-  // Another way: Operating Cost / (1 - Margin Percentage) if it's mark-up based on sale price, 
-  // but "applies 30% margin to operating cost" usually means costoOperativo + (costoOperativo * 0.30)
-  const subtotalVenta = costoOperativo + margen;
+  // Cap margin to avoid division by zero or negative denominator
+  const safeMargen = Math.min(margenPorcentaje, 0.9999);
+  // subtotalVenta = costoOperativo / (1 - margen)
+  const subtotalVenta = costoOperativo / (1 - safeMargen);
+  const margen = subtotalVenta - costoOperativo;
   
   // VAT = Subtotal Sale * VAT Percentage
   const iva = subtotalVenta * ivaPorcentaje;
