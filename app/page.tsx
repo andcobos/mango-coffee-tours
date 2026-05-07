@@ -5,10 +5,14 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const raw = await prisma.catalogo_servicios.findMany({
-    where: { activo: true },
-    orderBy: { nombre_es: "asc" },
-  });
+  const [raw, config] = await Promise.all([
+    prisma.catalogo_servicios.findMany({
+      where: { activo: true },
+      orderBy: { nombre_es: "asc" },
+      include: { opciones_servicio: { orderBy: { creado_en: "asc" } } },
+    }),
+    prisma.configuracion.findFirst(),
+  ]);
 
   const servicios = raw.map((s: (typeof raw)[number]) => ({
     id: s.id,
@@ -27,9 +31,15 @@ export default async function Home() {
     imagen_url: s.imagen_url ?? null,
     link_google_maps: s.link_google_maps ?? null,
     link_punto_encuentro: s.link_punto_encuentro ?? null,
+    opciones_servicio: s.opciones_servicio.map((o) => ({
+      id: o.id,
+      nombre: o.nombre,
+      descripcion: o.descripcion,
+      link_google_maps: o.link_google_maps,
+      precio_por_persona: Number(o.precio_por_persona ?? 0),
+    })),
   }));
 
-  const config = await prisma.configuracion.findFirst();
   const margenGlobal = config?.margen_ganancia ? Number(config.margen_ganancia) : 30;
 
   return (
@@ -61,7 +71,7 @@ export default async function Home() {
             Diseñe experiencias a medida. Una vez generada la cotización, se le notificará a Mango&Coffee Tours para dar el seguimiento.
           </p>
         </div>
-        
+
         <QuoteForm servicios={servicios} margenGlobal={margenGlobal} />
       </main>
 

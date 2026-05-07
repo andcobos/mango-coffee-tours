@@ -5,7 +5,7 @@ import { useActionState } from 'react'
 import { crearServicio, actualizarServicio } from '@/app/actions/catalogo'
 import Link from 'next/link'
 
-const TIPOS = ['DESTINO', 'GUIA', 'ENTRADA', 'SEGURO', 'ALIMENTACION', 'KIT', 'TRANSPORTE', 'ALOJAMIENTO', 'PAQUETE', 'OTRO', 'EXTRA']
+const TIPOS = ['DESTINO', 'SEGURO', 'ALOJAMIENTO', 'PAQUETE', 'OTRO', 'EXTRA']
 const TIPOS_VEHICULO = ['Sedan', 'SUV', 'Minivan', 'Microbus']
 
 interface ServiceData {

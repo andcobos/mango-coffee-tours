@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import ServiceForm from '@/components/admin/catalogo/ServiceForm'
+import OpcionesServicioManager from '@/components/admin/catalogo/OpcionesServicioManager'
 import Link from 'next/link'
 
 interface Props {
@@ -10,7 +11,10 @@ interface Props {
 export default async function EditarServicioPage({ params }: Props) {
   const { id } = await params
 
-  const servicio = await prisma.catalogo_servicios.findUnique({ where: { id } })
+  const servicio = await prisma.catalogo_servicios.findUnique({
+    where: { id },
+    include: { opciones_servicio: { orderBy: { creado_en: 'asc' } } },
+  })
 
   if (!servicio) {
     notFound()
@@ -50,6 +54,16 @@ export default async function EditarServicioPage({ params }: Props) {
 
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-8">
         <ServiceForm service={serviceData} />
+        <OpcionesServicioManager
+          servicioId={servicio.id}
+          opciones={servicio.opciones_servicio.map((o) => ({
+            id: o.id,
+            nombre: o.nombre,
+            descripcion: o.descripcion,
+            link_google_maps: o.link_google_maps,
+            precio_por_persona: Number(o.precio_por_persona ?? 0),
+          }))}
+        />
       </div>
     </div>
   )

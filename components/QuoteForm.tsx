@@ -8,6 +8,14 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import CotizacionPDF from "./pdf/CotizacionPDF";
 import { guardarCotizacion } from "@/app/actions/cotizaciones";
 
+export interface OpcionServicio {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  link_google_maps: string | null;
+  precio_por_persona: number;
+}
+
 export interface ServicioCatalogo {
   id: string;
   tipo: string;
@@ -25,6 +33,7 @@ export interface ServicioCatalogo {
   imagen_url: string | null;
   link_google_maps: string | null;
   link_punto_encuentro: string | null;
+  opciones_servicio: OpcionServicio[];
 }
 
 const quoteSchema = z.object({
@@ -48,6 +57,7 @@ const quoteSchema = z.object({
   notas: z.string().optional(),
   margen_cotizacion: z.coerce.number().min(0).max(100).optional(),
   descuento_porcentaje: z.coerce.number().min(0).max(100).optional(),
+  servicioOpciones: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export type QuoteFormValues = z.infer<typeof quoteSchema>;
@@ -128,6 +138,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       notas: "",
       margen_cotizacion: margenGlobal,
       descuento_porcentaje: 0,
+      servicioOpciones: {},
     },
   });
 
@@ -173,9 +184,11 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
   const selectedKits = watch("kits");
   const selectedAlojamientos = watch("alojamientos");
   const selectedOtros = watch("otros");
+  const selectedServicioOpciones = watch("servicioOpciones") ?? {};
 
   const currentPax = Number(pax) || 1;
   const totalSegurosSeleccionados = Object.values(selectedSeguros).reduce((a, b) => a + b, 0);
+
 
   /** Precio público unitario usando el margen dinámico actual + IVA 13% */
   const getPrecioPublicoUnitario = (costoOperativo: number): number => {
@@ -250,6 +263,29 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       if (s) totalCost += s.costo_operativo * currentPax;
     });
 
+    // Opciones de servicios del catálogo: precio_por_persona × pax
+    const allSelectedServiceIds = [
+      ...(selectedDestinations ?? []),
+      ...(selectedTickets ?? []),
+      ...(selectedTransports ?? []),
+      ...(selectedPaquetes ?? []),
+      ...(selectedExtras ?? []),
+      ...(selectedGuias ?? []),
+      ...(selectedAlimentacion ?? []),
+      ...(selectedKits ?? []),
+      ...(selectedAlojamientos ?? []),
+      ...(selectedOtros ?? []),
+    ];
+    Object.entries(selectedServicioOpciones).forEach(([servicioId, opcionIds]) => {
+      if (!allSelectedServiceIds.includes(servicioId)) return;
+      const s = servicios.find((sv) => sv.id === servicioId);
+      if (!s) return;
+      opcionIds.forEach((opId) => {
+        const opt = s.opciones_servicio.find((o) => o.id === opId);
+        if (opt && opt.precio_por_persona > 0) totalCost += opt.precio_por_persona * currentPax;
+      });
+    });
+
     // Number() explícito en todos los valores volátiles del formulario
     const margenDecimal = Math.min(Number(margen_cotizacion ?? margenGlobal), 99.99) / 100;
     const subtotalVenta = totalCost / (1 - margenDecimal);
@@ -269,7 +305,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       descuento: descuentoMonto,
       totalFinal,
     });
-  }, [selectedDestinations, selectedTickets, selectedSeguros, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, margen_cotizacion, descuento_porcentaje, currentPax, startDate, endDate]);
+  }, [selectedDestinations, selectedTickets, selectedSeguros, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, selectedServicioOpciones, margen_cotizacion, descuento_porcentaje, currentPax, startDate, endDate, servicios]);
 
   // Lista de nombres de todos los servicios seleccionados
   const allSelectedIds = [
@@ -567,6 +603,105 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                 <p className="text-red-500 text-xs mt-1">{errors.destinations.message}</p>
               )}
             </div>
+
+          {/* Panel de Lugares a visitar por servicio */}
+          {(() => {
+            const allSelIds = new Set([
+              ...(selectedDestinations ?? []),
+              ...(selectedTickets ?? []),
+              ...(selectedTransports ?? []),
+              ...(selectedPaquetes ?? []),
+              ...(selectedExtras ?? []),
+              ...(selectedGuias ?? []),
+              ...(selectedAlimentacion ?? []),
+              ...(selectedKits ?? []),
+              ...(selectedAlojamientos ?? []),
+              ...(selectedOtros ?? []),
+            ]);
+            const serviciosConOpciones = servicios.filter(
+              (s) => allSelIds.has(s.id) && s.opciones_servicio.length > 0
+            );
+            if (serviciosConOpciones.length === 0) return null;
+            return (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 bg-[#f77f00] rounded-full shrink-0" />
+                  <h4 className="text-sm font-semibold text-zinc-700">Lugares a visitar</h4>
+                </div>
+                <div className="space-y-4">
+                  {serviciosConOpciones.map((s) => (
+                    <div key={s.id}>
+                      <p className="text-xs font-semibold text-zinc-600 mb-2 pl-2 border-l-2 border-[#f77f00]">
+                        {s.nombre_es}
+                      </p>
+                      <div className="grid grid-cols-1 gap-2 ml-3">
+                        {s.opciones_servicio.map((opt) => {
+                          const isChecked = (selectedServicioOpciones[s.id] ?? []).includes(opt.id);
+                          return (
+                            <label
+                              key={opt.id}
+                              className="flex items-start gap-3 p-3 border border-zinc-100 rounded-lg cursor-pointer hover:bg-zinc-50 bg-white transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const current = selectedServicioOpciones[s.id] ?? [];
+                                  setValue("servicioOpciones", {
+                                    ...selectedServicioOpciones,
+                                    [s.id]: e.target.checked
+                                      ? [...current, opt.id]
+                                      : current.filter((id) => id !== opt.id),
+                                  });
+                                }}
+                                className="w-4 h-4 mt-0.5 text-[#f77f00] rounded border-zinc-300 focus:ring-[#f77f00] shrink-0"
+                              />
+                              <div className="flex flex-col gap-0.5 flex-1">
+                                <span className="text-sm font-medium text-zinc-800">{opt.nombre}</span>
+                                {opt.descripcion && (
+                                  <span className="text-xs text-zinc-500">{opt.descripcion}</span>
+                                )}
+                                <div className="flex items-center gap-3 flex-wrap mt-0.5">
+                                  {opt.precio_por_persona > 0 ? (
+                                    isAdmin ? (
+                                      <span className="text-xs text-zinc-500">
+                                        Costo: ${opt.precio_por_persona.toFixed(2)} / pax
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-zinc-500">
+                                        ${getPrecioPublicoUnitario(opt.precio_por_persona).toFixed(2)} / pax
+                                      </span>
+                                    )
+                                  ) : (
+                                    <span className="text-xs text-emerald-600 font-medium">Incluido</span>
+                                  )}
+                                  {opt.link_google_maps && (
+                                    <a
+                                      href={opt.link_google_maps}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="inline-flex items-center gap-1 text-xs text-[#004b23] hover:underline"
+                                    >
+                                      <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                        <circle cx="12" cy="10" r="3" />
+                                      </svg>
+                                      Ver en Maps
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
             {/* Transportes */}
             {catalogTransportes.length > 0 && (
@@ -916,16 +1051,39 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
               </div>
             )}
 
-            {(selectedServiceNames.length > 0 || totalSegurosSeleccionados > 0) && (
+            {(selectedServiceNames.length > 0 || totalSegurosSeleccionados > 0 || Object.values(selectedServicioOpciones).some(v => v.length > 0)) && (
               <div className="pb-3 border-b border-white/20">
                 <p className="text-emerald-100 mb-2">Servicios incluidos:</p>
                 <ul className="space-y-1">
-                  {selectedServiceNames.map((name) => (
-                    <li key={name} className="flex items-start gap-1.5 text-xs">
-                      <span className="text-[#f77f00] mt-0.5 shrink-0">✓</span>
-                      <span>{name}</span>
-                    </li>
-                  ))}
+                  {selectedServiceNames.map((name) => {
+                    const s = servicios.find((sv) => sv.nombre_es === name);
+                    const opcionIds = s ? (selectedServicioOpciones[s.id] ?? []) : [];
+                    return (
+                      <React.Fragment key={name}>
+                        <li className="flex items-start gap-1.5 text-xs">
+                          <span className="text-[#f77f00] mt-0.5 shrink-0">✓</span>
+                          <span>{name}</span>
+                        </li>
+                        {s && opcionIds.map((opId) => {
+                          const opt = s.opciones_servicio.find((o) => o.id === opId);
+                          if (!opt) return null;
+                          return (
+                            <li key={opId} className="flex items-start justify-between gap-1.5 text-xs pl-4">
+                              <span className="flex items-start gap-1.5">
+                                <span className="text-[#f77f00]/70 mt-0.5 shrink-0">↳</span>
+                                <span className="text-emerald-100/80">{opt.nombre}</span>
+                              </span>
+                              {opt.precio_por_persona > 0 && (
+                                <span className="text-emerald-200 shrink-0">
+                                  ${(getPrecioPublicoUnitario(opt.precio_por_persona) * currentPax).toFixed(2)}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
                   {Object.entries(selectedSeguros)
                     .filter(([, qty]) => qty > 0)
                     .map(([id, qty]) => {
@@ -1086,6 +1244,21 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   const s = catalogSeguros.find((sg) => sg.id === id);
                   return s ? { nombre: `${qty}x ${s.nombre_es}`, precio: getPrecioPublicoUnitario(s.costo_operativo) * qty } : null;
                 }),
+              // Opciones de servicios del catálogo (indentadas bajo su servicio padre)
+              ...Object.entries(selectedServicioOpciones).flatMap(([servicioId, opcionIds]) => {
+                const s = servicios.find((sv) => sv.id === servicioId);
+                if (!s || opcionIds.length === 0) return [];
+                return opcionIds.map((opId) => {
+                  const opt = s.opciones_servicio.find((o) => o.id === opId);
+                  if (!opt) return null;
+                  return {
+                    nombre: `  → ${opt.nombre}`,
+                    precio: opt.precio_por_persona > 0
+                      ? getPrecioPublicoUnitario(opt.precio_por_persona) * currentPax
+                      : 0,
+                  };
+                }).filter((x): x is { nombre: string; precio: number } => x !== null);
+              }),
             ].filter((item): item is { nombre: string; precio: number } => item !== null);
 
             const clienteName = watch("clientName") ?? "";

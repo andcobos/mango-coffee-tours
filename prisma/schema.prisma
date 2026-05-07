@@ -518,6 +518,7 @@ model catalogo_servicios {
   link_google_maps     String?
   link_punto_encuentro String?
   cotizaciones_detalle cotizaciones_detalle[]
+  opciones_servicio    opciones_servicio[]
 
   @@schema("public")
 }
@@ -612,6 +613,20 @@ model perfiles {
   creado_en       DateTime?      @default(now()) @db.Timestamptz(6)
   cotizaciones    cotizaciones[]
   users           users          @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model opciones_servicio {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  servicio_id        String             @db.Uuid
+  nombre             String             @db.VarChar
+  descripcion        String?
+  link_google_maps   String?
+  precio_por_persona Decimal?           @default(0) @db.Decimal
+  creado_en          DateTime?          @default(now()) @db.Timestamptz(6)
+  catalogo_servicios catalogo_servicios @relation(fields: [servicio_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_servicio")
 
   @@schema("public")
 }

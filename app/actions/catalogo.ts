@@ -117,6 +117,36 @@ export async function eliminarServicio(id: string) {
   revalidatePath('/admin/catalogo')
 }
 
+export async function agregarOpcionServicio(servicioId: string, formData: FormData) {
+  const nombre = formData.get('nombre') as string
+  const descripcion = (formData.get('descripcion') as string) || null
+  const link_google_maps = (formData.get('link_google_maps') as string) || null
+  const precio_por_persona = parseFloat(formData.get('precio_por_persona') as string) || 0
+
+  await prisma.opciones_servicio.create({
+    data: { servicio_id: servicioId, nombre, descripcion, link_google_maps, precio_por_persona },
+  })
+  revalidatePath(`/admin/catalogo/${servicioId}/editar`)
+}
+
+export async function actualizarOpcionServicio(opcionId: string, servicioId: string, formData: FormData) {
+  const nombre = formData.get('nombre') as string
+  const descripcion = (formData.get('descripcion') as string) || null
+  const link_google_maps = (formData.get('link_google_maps') as string) || null
+  const precio_por_persona = parseFloat(formData.get('precio_por_persona') as string) || 0
+
+  await prisma.opciones_servicio.update({
+    where: { id: opcionId },
+    data: { nombre, descripcion, link_google_maps, precio_por_persona },
+  })
+  revalidatePath(`/admin/catalogo/${servicioId}/editar`)
+}
+
+export async function eliminarOpcionServicio(opcionId: string, servicioId: string) {
+  await prisma.opciones_servicio.delete({ where: { id: opcionId } })
+  revalidatePath(`/admin/catalogo/${servicioId}/editar`)
+}
+
 export async function toggleActivoServicio(formData: FormData) {
   const id = formData.get('id') as string
   const activo = formData.get('activo') === 'true'
