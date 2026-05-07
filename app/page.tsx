@@ -2,6 +2,8 @@ import Image from "next/image";
 import QuoteForm from "@/components/QuoteForm";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const raw = await prisma.catalogo_servicios.findMany({
     where: { activo: true },
