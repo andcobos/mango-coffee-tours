@@ -12,6 +12,7 @@ import {
   Users,
   Settings,
   LogOut,
+  Table2,
   type LucideIcon,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
@@ -22,6 +23,7 @@ const navLinks: { href: string; label: string; Icon: LucideIcon }[] = [
   { href: '/admin/cotizar',     label: 'Generar Cotización',   Icon: FilePlus },
   { href: '/admin/cotizaciones',label: 'Cotizaciones',         Icon: ClipboardList },
   { href: '/admin/calculadora', label: 'Calculadora',          Icon: Calculator },
+  { href: '/admin/tarifas',     label: 'Tarifas Operativas',   Icon: Table2 },
   { href: '/admin/clientes',    label: 'Clientes',             Icon: Users },
   { href: '/admin/ajustes',     label: 'Ajustes',              Icon: Settings },
 ]

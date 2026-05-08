@@ -13,6 +13,7 @@ interface OpcionData {
   descripcion: string | null
   link_google_maps: string | null
   precio_por_persona: number
+  es_precio_neto: boolean
 }
 
 interface Props {
@@ -87,6 +88,15 @@ export default function OpcionesServicioManager({ servicioId, opciones }: Props)
               <label className="block text-xs text-zinc-600 mb-1">Link Google Maps <span className="text-zinc-400">(opcional)</span></label>
               <input name="link_google_maps" type="url" className={INPUT} placeholder="https://maps.google.com/..." />
             </div>
+            <div className="md:col-span-2">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" name="es_precio_neto" value="true" className="mt-0.5 w-4 h-4 text-[#004b23] rounded border-zinc-300 focus:ring-[#004b23]" />
+                <span className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-700">Precio Neto Final (Sin margen ni IVA adicionales)</span>
+                  <span className="text-xs text-zinc-400 mt-0.5">Actívalo cuando el precio ya incluye IVA y no debe llevar margen de agencia (ej. entradas, alimentación prepagada).</span>
+                </span>
+              </label>
+            </div>
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={isPending} className="bg-[#004b23] text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50">
@@ -125,6 +135,15 @@ export default function OpcionesServicioManager({ servicioId, opciones }: Props)
                     <label className="block text-xs text-zinc-600 mb-1">Link Google Maps</label>
                     <input name="link_google_maps" type="url" defaultValue={opt.link_google_maps ?? ''} className={INPUT} />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                      <input type="checkbox" name="es_precio_neto" value="true" defaultChecked={opt.es_precio_neto} className="mt-0.5 w-4 h-4 text-[#004b23] rounded border-zinc-300 focus:ring-[#004b23]" />
+                      <span className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-700">Precio Neto Final (Sin margen ni IVA adicionales)</span>
+                        <span className="text-xs text-zinc-400 mt-0.5">Actívalo cuando el precio ya incluye IVA y no debe llevar margen de agencia.</span>
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" disabled={isPending} className="bg-[#004b23] text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50">Guardar</button>
@@ -141,6 +160,11 @@ export default function OpcionesServicioManager({ servicioId, opciones }: Props)
                       <span className="text-xs font-semibold text-emerald-700">${opt.precio_por_persona.toFixed(2)} / pax</span>
                     ) : (
                       <span className="text-xs text-zinc-400">Incluido (sin costo extra)</span>
+                    )}
+                    {opt.es_precio_neto && (
+                      <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-medium">
+                        Precio Neto
+                      </span>
                     )}
                     {opt.link_google_maps && (
                       <a href={opt.link_google_maps} target="_blank" rel="noopener noreferrer" className="text-xs text-[#004b23] hover:underline">

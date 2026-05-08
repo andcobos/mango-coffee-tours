@@ -24,8 +24,10 @@ export interface CotizacionPDFProps {
   paqueteDescripcion?: string;
   servicios: ServicioPDF[];
   totalFinal: number;
+  totalPorPersona: number;
   codigoReferencia: string;
   notas?: string;
+  incluyeTarifa?: boolean;
 }
 
 const verde = "#004b23";
@@ -295,8 +297,10 @@ export default function CotizacionPDF({
   paqueteDescripcion,
   servicios,
   totalFinal,
+  totalPorPersona,
   codigoReferencia,
   notas,
+  incluyeTarifa = false,
 }: CotizacionPDFProps) {
   return (
     <Document>
@@ -401,6 +405,17 @@ export default function CotizacionPDF({
           )}
         </View>
 
+        {/* Nota de tarifa operativa (solo si aplica, sin revelar costos) */}
+        {incluyeTarifa && (
+          <View style={{ marginBottom: 12 }}>
+            <View style={[styles.notasBox, { borderLeftColor: verde, backgroundColor: '#f0fdf4' }]}>
+              <Text style={[styles.notasTexto, { color: verde, fontStyle: 'normal' }]}>
+                Nota: Su cotización incluye transporte, motorista, guía asignado, gasolina y kit de bienvenida.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Notas */}
         {notas && notas.trim().length > 0 && (
           <View style={styles.notasBlock}>
@@ -419,6 +434,9 @@ export default function CotizacionPDF({
             <Text style={styles.totalValue}>{formatCurrency(totalFinal)}</Text>
           </View>
         </View>
+        <Text style={[styles.ivaNote, { marginTop: 4 }]}>
+          Total por persona: {formatCurrency(totalPorPersona)}
+        </Text>
         <Text style={styles.ivaNote}>* Todos los precios incluyen IVA (13%)</Text>
 
         {/* Footer */}

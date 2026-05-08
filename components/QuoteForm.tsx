@@ -14,6 +14,19 @@ export interface OpcionServicio {
   descripcion: string | null;
   link_google_maps: string | null;
   precio_por_persona: number;
+  es_precio_neto: boolean;
+}
+
+export interface TarifaOperativa {
+  id: string;
+  pax: number;
+  asientos: number;
+  costo_transporte: number;
+  costo_motorista: number;
+  costo_gasolina: number;
+  costo_guia: number;
+  costo_otros: number;
+  costo_kit: number;
 }
 
 export interface ServicioCatalogo {
@@ -64,6 +77,7 @@ export type QuoteFormValues = z.infer<typeof quoteSchema>;
 
 interface Props {
   servicios: ServicioCatalogo[];
+  tarifas?: TarifaOperativa[];
   isAdmin?: boolean;
   margenGlobal?: number;
 }
@@ -106,7 +120,7 @@ function calcularDias(startDate: string, endDate: string): number {
   return Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1);
 }
 
-export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 30 }: Props) {
+export default function QuoteForm({ servicios, tarifas = [], isAdmin = false, margenGlobal = 30 }: Props) {
   const catalogDestinos = servicios.filter((s) => s.tipo === "DESTINO");
   const catalogEntradas = servicios.filter((s) => s.tipo === "ENTRADA");
   const catalogSeguros = servicios.filter((s) => s.tipo === "SEGURO");
@@ -158,14 +172,34 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
     setIsClient(true);
   }, []);
 
-  const [pricingResult, setPricingResult] = useState({
+  const [pricingResult, setPricingResult] = useState<{
+    costoOperativo: number;
+    costoNeto: number;
+    margen: number;
+    subtotalVenta: number;
+    iva: number;
+    granTotal: number;
+    descuento: number;
+    totalFinal: number;
+    tarifaDetalle: {
+      transporte: number;
+      motorista: number;
+      gasolina: number;
+      guia: number;
+      otros: number;
+      kitTotal: number;
+      total: number;
+    } | null;
+  }>({
     costoOperativo: 0,
+    costoNeto: 0,
     margen: 0,
     subtotalVenta: 0,
     iva: 0,
     granTotal: 0,
     descuento: 0,
     totalFinal: 0,
+    tarifaDetalle: null,
   });
 
   const pax = watch("pax");
@@ -263,7 +297,8 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       if (s) totalCost += s.costo_operativo * currentPax;
     });
 
-    // Opciones de servicios del catálogo: precio_por_persona × pax
+    // Opciones de servicios: Acumulador A (sujeto a margen) y Acumulador B (precio neto directo)
+    let costoNeto = 0;
     const allSelectedServiceIds = [
       ...(selectedDestinations ?? []),
       ...(selectedTickets ?? []),
@@ -282,30 +317,59 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
       if (!s) return;
       opcionIds.forEach((opId) => {
         const opt = s.opciones_servicio.find((o) => o.id === opId);
-        if (opt && opt.precio_por_persona > 0) totalCost += opt.precio_por_persona * currentPax;
+        if (!opt || opt.precio_por_persona <= 0) return;
+        if (opt.es_precio_neto) {
+          costoNeto += opt.precio_por_persona * currentPax; // Acumulador B: pasa directo al total
+        } else {
+          totalCost += opt.precio_por_persona * currentPax; // Acumulador A: sujeto a margen e IVA
+        }
       });
     });
 
-    // Number() explícito en todos los valores volátiles del formulario
+    // Tarifa operativa: solo si hay al menos un destino seleccionado
+    let tarifaDetalleTemp: typeof pricingResult.tarifaDetalle = null;
+    const hayDestinos = (selectedDestinations?.length ?? 0) > 0;
+    if (hayDestinos && tarifas.length > 0) {
+      const sorted = [...tarifas].sort((a, b) => a.pax - b.pax);
+      const tarifa = sorted.find((t) => t.pax === currentPax) ?? sorted[sorted.length - 1];
+      const costoFijos =
+        tarifa.costo_transporte + tarifa.costo_motorista +
+        tarifa.costo_gasolina  + tarifa.costo_guia       + tarifa.costo_otros;
+      const costoFijoPorPersona = costoFijos / currentPax;
+      const costoOpPorPersona   = costoFijoPorPersona + tarifa.costo_kit;
+      const tarifaCosto          = costoOpPorPersona * currentPax; // = costoFijos + costo_kit * pax
+      totalCost += tarifaCosto;
+      tarifaDetalleTemp = {
+        transporte: tarifa.costo_transporte,
+        motorista:  tarifa.costo_motorista,
+        gasolina:   tarifa.costo_gasolina,
+        guia:       tarifa.costo_guia,
+        otros:      tarifa.costo_otros,
+        kitTotal:   tarifa.costo_kit * currentPax,
+        total:      tarifaCosto,
+      };
+    }
+
+    // Acumulador A (totalCost) sujeto a margen e IVA; Acumulador B (costoNeto) suma directa
     const margenDecimal = Math.min(Number(margen_cotizacion ?? margenGlobal), 99.99) / 100;
     const subtotalVenta = totalCost / (1 - margenDecimal);
     const iva = subtotalVenta * 0.13;
-    const granTotal = subtotalVenta + iva;
+    const granTotal = subtotalVenta + iva + costoNeto;
     const descuentoMonto = granTotal * ((Number(descuento_porcentaje) || 0) / 100);
     const totalFinal = granTotal - descuentoMonto;
 
-    console.log("MATH DEBUG:", { totalCost, margenDecimal, subtotalVenta, iva, granTotal, descuentoMonto, totalFinal });
-
     setPricingResult({
       costoOperativo: totalCost,
+      costoNeto,
       margen: subtotalVenta - totalCost,
       subtotalVenta,
       iva,
       granTotal,
       descuento: descuentoMonto,
       totalFinal,
+      tarifaDetalle: tarifaDetalleTemp,
     });
-  }, [selectedDestinations, selectedTickets, selectedSeguros, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, selectedServicioOpciones, margen_cotizacion, descuento_porcentaje, currentPax, startDate, endDate, servicios]);
+  }, [selectedDestinations, selectedTickets, selectedSeguros, selectedTransports, selectedPaquetes, selectedExtras, selectedGuias, selectedAlimentacion, selectedKits, selectedAlojamientos, selectedOtros, selectedServicioOpciones, margen_cotizacion, descuento_porcentaje, currentPax, startDate, endDate, servicios, tarifas]);
 
   // Lista de nombres de todos los servicios seleccionados
   const allSelectedIds = [
@@ -669,11 +733,19 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                                       </span>
                                     ) : (
                                       <span className="text-xs text-zinc-500">
-                                        ${getPrecioPublicoUnitario(opt.precio_por_persona).toFixed(2)} / pax
+                                        ${(opt.es_precio_neto
+                                          ? opt.precio_por_persona
+                                          : getPrecioPublicoUnitario(opt.precio_por_persona)
+                                        ).toFixed(2)} / pax
                                       </span>
                                     )
                                   ) : (
                                     <span className="text-xs text-emerald-600 font-medium">Incluido</span>
+                                  )}
+                                  {isAdmin && opt.es_precio_neto && (
+                                    <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-medium">
+                                      Precio Neto
+                                    </span>
                                   )}
                                   {opt.link_google_maps && (
                                     <a
@@ -1071,11 +1143,14 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                             <li key={opId} className="flex items-start justify-between gap-1.5 text-xs pl-4">
                               <span className="flex items-start gap-1.5">
                                 <span className="text-[#f77f00]/70 mt-0.5 shrink-0">↳</span>
-                                <span className="text-emerald-100/80">{opt.nombre}</span>
+                                <span className="text-emerald-100/80">{opt.nombre} (x{currentPax})</span>
                               </span>
                               {opt.precio_por_persona > 0 && (
                                 <span className="text-emerald-200 shrink-0">
-                                  ${(getPrecioPublicoUnitario(opt.precio_por_persona) * currentPax).toFixed(2)}
+                                  ${(opt.es_precio_neto
+                                    ? opt.precio_por_persona * currentPax
+                                    : getPrecioPublicoUnitario(opt.precio_por_persona) * currentPax
+                                  ).toFixed(2)}
                                 </span>
                               )}
                             </li>
@@ -1111,6 +1186,30 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   <span className="text-emerald-100">Costo Operativo:</span>
                   <span>${pricingResult.costoOperativo.toFixed(2)}</span>
                 </div>
+                {pricingResult.tarifaDetalle && (
+                  <div className="ml-2 mb-1 border border-white/10 rounded-lg p-2 bg-white/5">
+                    <p className="text-xs text-emerald-200 font-semibold mb-1">Desglose tarifa operativa:</p>
+                    <div className="space-y-0.5">
+                      {([
+                        ['Transporte', pricingResult.tarifaDetalle.transporte],
+                        ['Motorista',  pricingResult.tarifaDetalle.motorista],
+                        ['Gasolina',   pricingResult.tarifaDetalle.gasolina],
+                        ['Guía',       pricingResult.tarifaDetalle.guia],
+                        ['Otros',      pricingResult.tarifaDetalle.otros],
+                        ['Kit (total)',pricingResult.tarifaDetalle.kitTotal],
+                      ] as [string, number][]).map(([label, val]) => (
+                        <div key={label} className="flex justify-between text-xs text-emerald-100/80">
+                          <span>{label}</span>
+                          <span>${val.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-xs font-semibold text-white pt-1 border-t border-white/10 mt-1">
+                        <span>Subtotal tarifa</span>
+                        <span>${pricingResult.tarifaDetalle.total.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 pb-1">
                   <span className="text-emerald-100 shrink-0">Margen (%):</span>
                   <input
@@ -1138,6 +1237,15 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   <span className="text-emerald-100">IVA (13%):</span>
                   <span>${pricingResult.iva.toFixed(2)}</span>
                 </div>
+                {pricingResult.costoNeto > 0 && (
+                  <div className="flex justify-between items-center pb-3 border-b border-white/20">
+                    <span className="text-yellow-300 text-xs flex flex-col leading-tight">
+                      <span>Costos Netos:</span>
+                      <span className="text-yellow-300/60 font-normal">sin margen ni IVA</span>
+                    </span>
+                    <span className="text-yellow-300">+${pricingResult.costoNeto.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 pb-3 border-b border-white/20">
                   <span className="text-emerald-100 shrink-0">Descuento (%):</span>
                   <input
@@ -1161,6 +1269,12 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   <span>Gran Total:</span>
                   <span>${pricingResult.totalFinal.toFixed(2)}</span>
                 </div>
+                {currentPax > 0 && (
+                  <div className="flex justify-between items-center text-xs text-emerald-200/70 pt-1">
+                    <span>Total por persona:</span>
+                    <span>${(pricingResult.totalFinal / currentPax).toFixed(2)}</span>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -1168,9 +1282,20 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   <span>Total a Pagar:</span>
                   <span>${pricingResult.totalFinal.toFixed(2)}</span>
                 </div>
+                {currentPax > 0 && (
+                  <div className="flex justify-between items-center text-xs text-emerald-200/70 pt-0.5">
+                    <span>Total por persona:</span>
+                    <span>${(pricingResult.totalFinal / currentPax).toFixed(2)}</span>
+                  </div>
+                )}
                 <p className="text-xs text-emerald-100/80 text-center pt-1">
                   Todos los precios incluyen IVA
                 </p>
+                {pricingResult.tarifaDetalle && (
+                  <p className="text-xs text-emerald-200/70 italic mt-2 text-center leading-relaxed">
+                    Nota: Su cotización incluye transporte, motorista, guía asignado, gasolina y kit de bienvenida.
+                  </p>
+                )}
               </>
             )}
           </div>
@@ -1252,7 +1377,7 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                   const opt = s.opciones_servicio.find((o) => o.id === opId);
                   if (!opt) return null;
                   return {
-                    nombre: `  → ${opt.nombre}`,
+                    nombre: `  → ${opt.nombre} (x${currentPax})`,
                     precio: opt.precio_por_persona > 0
                       ? getPrecioPublicoUnitario(opt.precio_por_persona) * currentPax
                       : 0,
@@ -1299,8 +1424,10 @@ export default function QuoteForm({ servicios, isAdmin = false, margenGlobal = 3
                       paqueteDescripcion={paqueteSeleccionado?.descripcion ?? undefined}
                       servicios={serviciosPDF}
                       totalFinal={pricingResult.totalFinal}
+                      totalPorPersona={currentPax > 0 ? pricingResult.totalFinal / currentPax : 0}
                       codigoReferencia={codigoReferencia}
                       notas={notas || undefined}
+                      incluyeTarifa={pricingResult.tarifaDetalle !== null}
                     />
                   }
                   fileName={`cotizacion-${clienteName.replace(/\s+/g, "-").toLowerCase() || "cliente"}.pdf`}

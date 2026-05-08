@@ -122,9 +122,10 @@ export async function agregarOpcionServicio(servicioId: string, formData: FormDa
   const descripcion = (formData.get('descripcion') as string) || null
   const link_google_maps = (formData.get('link_google_maps') as string) || null
   const precio_por_persona = parseFloat(formData.get('precio_por_persona') as string) || 0
+  const es_precio_neto = formData.get('es_precio_neto') === 'true'
 
   await prisma.opciones_servicio.create({
-    data: { servicio_id: servicioId, nombre, descripcion, link_google_maps, precio_por_persona },
+    data: { servicio_id: servicioId, nombre, descripcion, link_google_maps, precio_por_persona, es_precio_neto },
   })
   revalidatePath(`/admin/catalogo/${servicioId}/editar`)
 }
@@ -134,10 +135,11 @@ export async function actualizarOpcionServicio(opcionId: string, servicioId: str
   const descripcion = (formData.get('descripcion') as string) || null
   const link_google_maps = (formData.get('link_google_maps') as string) || null
   const precio_por_persona = parseFloat(formData.get('precio_por_persona') as string) || 0
+  const es_precio_neto = formData.get('es_precio_neto') === 'true'
 
   await prisma.opciones_servicio.update({
     where: { id: opcionId },
-    data: { nombre, descripcion, link_google_maps, precio_por_persona },
+    data: { nombre, descripcion, link_google_maps, precio_por_persona, es_precio_neto },
   })
   revalidatePath(`/admin/catalogo/${servicioId}/editar`)
 }

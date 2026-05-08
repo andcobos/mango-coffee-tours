@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [raw, config] = await Promise.all([
+  const [raw, config, rawTarifas] = await Promise.all([
     prisma.catalogo_servicios.findMany({
       where: { activo: true },
       orderBy: { nombre_es: "asc" },
       include: { opciones_servicio: { orderBy: { creado_en: "asc" } } },
     }),
     prisma.configuracion.findFirst(),
+    prisma.tarifas_operativas.findMany({ orderBy: { pax: "asc" } }),
   ]);
 
   const servicios = raw.map((s: (typeof raw)[number]) => ({
@@ -37,10 +38,23 @@ export default async function Home() {
       descripcion: o.descripcion,
       link_google_maps: o.link_google_maps,
       precio_por_persona: Number(o.precio_por_persona ?? 0),
+      es_precio_neto: o.es_precio_neto ?? false,
     })),
   }));
 
   const margenGlobal = config?.margen_ganancia ? Number(config.margen_ganancia) : 30;
+
+  const tarifas = rawTarifas.map((t) => ({
+    id: t.id,
+    pax: t.pax,
+    asientos: t.asientos,
+    costo_transporte: Number(t.costo_transporte),
+    costo_motorista:  Number(t.costo_motorista),
+    costo_gasolina:   Number(t.costo_gasolina),
+    costo_guia:       Number(t.costo_guia),
+    costo_otros:      Number(t.costo_otros),
+    costo_kit:        Number(t.costo_kit),
+  }));
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50 font-sans selection:bg-[#f77f00] selection:text-white">
@@ -72,7 +86,7 @@ export default async function Home() {
           </p>
         </div>
 
-        <QuoteForm servicios={servicios} margenGlobal={margenGlobal} />
+        <QuoteForm servicios={servicios} tarifas={tarifas} margenGlobal={margenGlobal} />
       </main>
 
       {/* Footer */}

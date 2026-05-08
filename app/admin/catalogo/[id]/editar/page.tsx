@@ -62,6 +62,7 @@ export default async function EditarServicioPage({ params }: Props) {
             descripcion: o.descripcion,
             link_google_maps: o.link_google_maps,
             precio_por_persona: Number(o.precio_por_persona ?? 0),
+            es_precio_neto: o.es_precio_neto ?? false,
           }))}
         />
       </div>

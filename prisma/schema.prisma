@@ -626,7 +626,24 @@ model opciones_servicio {
   link_google_maps   String?
   precio_por_persona Decimal?           @default(0) @db.Decimal
   creado_en          DateTime?          @default(now()) @db.Timestamptz(6)
+  es_precio_neto     Boolean?           @default(false)
   catalogo_servicios catalogo_servicios @relation(fields: [servicio_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_servicio")
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tarifas_operativas {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pax              Int       @unique
+  asientos         Int       @default(5)
+  costo_transporte Decimal   @default(0) @db.Decimal
+  costo_motorista  Decimal   @default(0) @db.Decimal
+  costo_gasolina   Decimal   @default(0) @db.Decimal
+  costo_guia       Decimal   @default(0) @db.Decimal
+  costo_otros      Decimal   @default(0) @db.Decimal
+  costo_kit        Decimal   @default(0) @db.Decimal
+  creado_en        DateTime? @default(now()) @db.Timestamptz(6)
 
   @@schema("public")
 }
